@@ -1,0 +1,72 @@
+emulate -L zsh
+setopt extendedglob
+autoload -Uz split-shell-arguments
+
+#[[ -f log ]] && rm log
+
+change_regex() {
+    re="/${(Q)1}/ {}"
+    printf ${(qq)re}
+}
+
+stuffs() {
+    local replacement_line REPLY REPLY2 flag
+    local -a reply
+
+    # Store line in $reply[@], and some postitional info: 
+    split-shell-arguments
+    #current_word=$REPLY
+    #current_pos=$REPLY2
+
+    flag=0
+    #echo ${(#)reply[@]}
+    for (( i=1; i<=$#reply; i++)); do 
+        #echo pre $i ${(qq)reply[$i]} >>log
+        if (( i%2==1 )); then
+            # This is spacing. 
+            continue
+        elif [[ $reply[$i] = "grep" || $reply[$i] = "egrep" ]]; then
+            # TODO: Generalize for some grep commands, aliases, etc.
+            flag=1
+            reply[$i]="awk"
+        elif [[ $flag = 1 && $reply[$i] = -* ]]; then
+            # It an option to grep? 
+            # If so, deal with the option. 
+            # for ((l=2; l<=$reply[$i]; $l++)); do
+            #     #check those options!
+            #     case $reply[$i][$l] in
+            #         (v)
+            #             opt["inverse"]
+            #             ;;
+            #         (w)
+            #             opt["wordmatch"]
+            #             ;;
+            #         (-)
+            #             continue
+            #             ;;
+            #     esac
+            # done
+
+            # For now: Delete the options:
+            reply[$i]=""
+
+            # Possibly something about removing spaces from the whitespace 
+            # around this thing...
+        elif [[ $flag = 1 ]]; then
+            # This is the regex!
+            flag=0     # do not consider extra `-e`-s
+            # Now we know what options are there to modify the regex. 
+            # What options will be relevant? 
+            #  * -v
+            reply[$i]=$(change_regex $reply[$i])
+        fi
+        #echo post $i ${(qq)reply[$i]} >>log
+    done
+
+    for (( i=1; i<=$#reply; i++ )); do
+        replacement_line+=$reply[$i]
+    done
+
+    BUFFER="$replacement_line"
+}
+stuffs

@@ -1,0 +1,29 @@
+# Test of the grep2awk zle thing. 
+
+%prep
+  if ( zmodload -i zsh/zpty ) >/dev/null 2>&1; then
+    . ./comptest
+    comptestinit -z zsh
+  else
+    ZTST_unimplemented="the zsh/zpty module is not available"
+  fi
+  #export zpath=( .. $zpath )
+  zpty_run 'bindkey -d'
+  zpty_run 'autoload transpose-words'
+  zpty_run 'zle -N transpose-words'
+  zpty_run 'bindkey "\C-t" transpose-words'
+
+%test
+
+  zletest $'aa bb\C-t'
+0:Basic functionality
+>BUFFER: bb aa
+>CURSOR: 8
+
+
+
+
+
+
+
+

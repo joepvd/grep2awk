@@ -1,0 +1,18 @@
+# Test of the grep2awk zle thing. 
+
+%prep
+  if ( zmodload -i zsh/zpty ) >/dev/null 2>&1; then
+    . ./comptest
+    comptestinit -v -z zsh
+  else
+    ZTST_unimplemented="the zsh/zpty module is not available"
+  fi
+  zpath=( .. $zpath )
+  zle -N grep2awk
+  bindkey '' grep2awk
+
+%test
+
+  zletest $'grep aaa bbbb'
+0:Basic function
+>BUFFER: awk '/aaa/ {}' bbbb
