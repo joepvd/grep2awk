@@ -59,6 +59,12 @@
 >BUFFER: awk 'BEGINFILE{c=0};ENDFILE{if(c>0)print FILENAME":"c}; /regex/ {c++}' data
 >CURSOR: 68
 
+  zletest $'grep -P regex data\C-P'
+0:No support for pcre
+>BUFFER: grep -P regex data
+>CURSOR: 18
+
+
 
 %clean
 
