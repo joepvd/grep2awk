@@ -54,11 +54,10 @@
 >BUFFER: awk '/^(regex)$/ {print}' data
 >CURSOR: 23
 
-
-
-
-
-
+  zletest $'grep -c regex data\C-P'
+0:Count matches
+>BUFFER: awk 'BEGINFILE{c=0};ENDFILE{if(c>0)print FILENAME":"c} /regex/ {c++}' data
+>CURSOR: 67
 
 
 %clean

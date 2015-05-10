@@ -15,11 +15,15 @@ change_regex() {
         re="!$re"
     }
     action="{print}"
-    # H, l and L are mutually exclusive. One of the will win. 
+    # c, H, l and L are mutually exclusive. One of the will win. 
     # TODO: Maybe should fail here explicitly:
     #
-    #    (( opt[H] + opt[l] + opt[L] > 1 )) && exit 1
+    #    (( opt[H] + opt[l] + opt[L] > 1 opt[c] )) && exit 1
 
+    (( opt[c] > 0 )) && {
+        prelude='BEGINFILE{c=0};ENDFILE{if(c>0)print FILENAME":"c} '
+        action='{c++}'
+    }
     (( opt[H] > 0 )) && {
         action='{print FILENAME":"$0}'
     }
@@ -90,6 +94,8 @@ main() {
                     (x) typeset "opt[x]"=1
                         ;;
                     (H) typeset "opt[H]"=1
+                        ;;
+                    (c) typeset "opt[c]"=1
                         ;;
                     (*) continue
                         ;;
