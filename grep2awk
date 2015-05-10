@@ -1,3 +1,28 @@
+# grep2awk: 
+# A zle convenience function to exchange a `grep` on the command line
+# into a corresponding `awk`-line. 
+# How to use: 
+# Drop this file somewhere in your $fpath. And configure your shell to
+# make use of it:
+#
+#    autoload grep2awk
+#    zle -N grep2awk
+#    bindkey "^X^A" grep2awk
+#
+# This makes the widget available under <CTRL-X><CTRL-A>. 
+#
+# Known bugs:
+# - The command conversions have not been thorougly tested
+# - From Fixed to ERE, there are issues with backslashes
+# - From BRE to ERE is not yet implemented
+#
+# The files t/comptest and t/ztst.zsh are taken (and modified) from the
+# zsh project. This project can be used under the same terms as the zsh 
+# project. 
+#
+# By Joep van Delft, 2015
+
+
 emulate -L zsh
 setopt extendedglob
 autoload -Uz split-shell-arguments
