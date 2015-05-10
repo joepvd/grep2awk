@@ -3,6 +3,7 @@ setopt extendedglob
 autoload -Uz split-shell-arguments
 
 change_regex() {
+    local re prelude action prog
     re=${(Q)1}
     (( opt[w] > 0 )) && {
         re="\\<($re)\\>" 
@@ -14,6 +15,9 @@ change_regex() {
     (( opt[v] > 0 )) && {
         re="!$re"
     }
+    (( opt[i] > 0 )) && {
+        prelude+="BEGIN{IGNORECASE=1}; "
+    }
     action="{print}"
     # c, H, l and L are mutually exclusive. One of the will win. 
     # TODO: Maybe should fail here explicitly:
@@ -21,7 +25,7 @@ change_regex() {
     #    (( opt[H] + opt[l] + opt[L] > 1 opt[c] )) && exit 1
 
     (( opt[c] > 0 )) && {
-        prelude='BEGINFILE{c=0};ENDFILE{if(c>0)print FILENAME":"c} '
+        prelude+='BEGINFILE{c=0};ENDFILE{if(c>0)print FILENAME":"c}; '
         action='{c++}'
     }
     (( opt[H] > 0 )) && {
@@ -31,7 +35,7 @@ change_regex() {
         action="{print FILENAME; nextfile}"
     }
     (( opt[L] > 0 )) && {
-        prelude="BEGINFILE{flag=0};ENDFILE{if (flag==0)print FILENAME}; "
+        prelude+="BEGINFILE{flag=0};ENDFILE{if (flag==0)print FILENAME}; "
         action="{flag=1; nextfile}"
     }
     prog="${prelude}${re} $action"
@@ -61,20 +65,22 @@ main() {
             case $reply[$i] in
                 (grep)
                     flag=1
-                    (( cursor += 3 ))
                     reply[$i]="awk"
+                    (( cursor += $#reply[$i] ))
                     ;;
                 (egrep)
                     flag=1
-                    (( cursor += 3 ))
                     reply[$i]="awk"
-                    opt[extended]++
+                    (( cursor += $#reply[$i] ))
+                    typeset "opt[extended]"=1
                     ;;
                 (pgrep)
                     flag=1
-                    (( cursor += 3 ))
                     reply[$i]="awk"
-                    opt[pcre]++
+                    (( cursor += $#reply[$i] ))
+                    typeset "opt[pcre]"=1
+                    print "PCRE grep is not supported" >/dev/stderr
+                    return 1
                     ;;
             esac
         elif [[ $flag = 1 && $reply[$i] = -* ]]; then
@@ -96,6 +102,10 @@ main() {
                     (H) typeset "opt[H]"=1
                         ;;
                     (c) typeset "opt[c]"=1
+                        ;;
+                    (E) typeset "opt[E]"=1
+                        ;;
+                    (i) typeset "opt[i]"=1
                         ;;
                     (*) continue
                         ;;
