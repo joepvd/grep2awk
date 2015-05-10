@@ -54,6 +54,12 @@ fixed2ere() {
     echo $p
 }
 
+swap_command() {
+    flag=1
+    reply[$i]="awk"
+    (( cursor += $#reply[$i] ))
+}
+
 main() {
     # Needs to be in its own scope, to not have the variables leak to
     # the main shell process. 
@@ -76,14 +82,10 @@ main() {
         elif [[ $flag = 0 ]]; then
             case $reply[$i] in
                 (grep)
-                    flag=1
-                    reply[$i]="awk"
-                    (( cursor += $#reply[$i] ))
+                    swap_command
                     ;;
                 (egrep)
-                    flag=1
-                    reply[$i]="awk"
-                    (( cursor += $#reply[$i] ))
+                    swap_command
                     typeset "opt[E]"=1
                     ;;
                 (pgrep)
@@ -91,9 +93,7 @@ main() {
                     return 1
                     ;;
                 (fgrep)
-                    flag=1
-                    reply[$i]="awk"
-                    (( cursor += $#reply[$i] ))
+                    swap_command
                     typeset "opt[F]"=1
                     ;;
             esac
