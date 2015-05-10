@@ -14,7 +14,7 @@ change_regex() {
     (( opt[v] > 0 )) && {
         re="!$re"
     }
-    action="{}"
+    action="{print}"
     # H, l and L are mutually exclusive. One of the will win. 
     # TODO: Maybe should fail here explicitly:
     #
