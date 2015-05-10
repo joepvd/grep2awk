@@ -12,6 +12,9 @@ regex2awkprog() {
         re="^($re)$"
     }
     re="/$re/"
+    (( opt[F] > 0 )) && {
+        re="$(fixed2ere ${(q)re})"
+    }
     (( opt[v] > 0 )) && {
         re="!$re"
     }
@@ -44,8 +47,12 @@ regex2awkprog() {
 }
 
 fixed2ere() {
-    instr="$1"
-    specialchars="\\^$.[]|()*+?{}"
+    # Changing the special characters from a fixed string regex into
+    # a properly escaped Extended Regular Expression. Did not yet manage to 
+    # properly escape two consequtive backslash characters.
+    p=${${1}//\\/\\\\\\\\}
+    echo $p
+}
 
 main() {
     # Needs to be in its own scope, to not have the variables leak to
@@ -86,7 +93,7 @@ main() {
                 (fgrep)
                     flag=1
                     reply[$i]="awk"
-                    (( cursor += $#replay[$i] ))
+                    (( cursor += $#reply[$i] ))
                     typeset "opt[F]"=1
                     ;;
             esac
