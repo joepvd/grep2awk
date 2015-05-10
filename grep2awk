@@ -18,6 +18,8 @@ regex2awkprog() {
     (( opt[i] > 0 )) && {
         prelude+="BEGIN{IGNORECASE=1}; "
     }
+    # The print action. Add some extra stuff if line count or file name
+    # are enabled.
     action="{print ${opt[H]:+FILENAME\":\"}${opt[n]:+NR\":\"}\$0}"
     # c, H, l and L are mutually exclusive. One of the will win. 
     # TODO: Maybe should fail here explicitly:
@@ -40,6 +42,10 @@ regex2awkprog() {
     prog="${prelude}${re} $action"
     printf ${(qq)prog}
 }
+
+fixed2ere() {
+    instr="$1"
+    specialchars="\\^$.[]|()*+?{}"
 
 main() {
     # Needs to be in its own scope, to not have the variables leak to
@@ -74,7 +80,7 @@ main() {
                     typeset "opt[E]"=1
                     ;;
                 (pgrep)
-                    zle -M "PCRE grep is not supported"
+                    zle -M "grep2awk: PCRE grep is not supported"
                     return 1
                     ;;
                 (fgrep)
@@ -106,7 +112,7 @@ main() {
                         ;;
                     (E) typeset "opt[E]"=1
                         ;;
-                    (P) zle -M "PCRE grep is not supported"
+                    (P) zle -M "grep2awk: PCRE grep is not supported"
                         return 1
                         ;;
                     (F) typeset "opt[F]"=1
@@ -114,6 +120,10 @@ main() {
                     (i) typeset "opt[i]"=1
                         ;;
                     (n) typeset "opt[n]"=1
+                        ;;
+                    (A|B|C)
+                        zle -M "grep2awk: Context switches (A,B,C) are as of yet not supported"
+                        return 1
                         ;;
                     (*) continue
                         ;;
