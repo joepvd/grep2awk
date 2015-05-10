@@ -16,13 +16,13 @@
 
   zletest $'grep regex data\C-P'
 0:Basic function
->BUFFER: awk '/regex/ {print}' data
->CURSOR: 19
+>BUFFER: awk '/regex/ {print $0}' data
+>CURSOR: 22
 
   zletest $'grep "aa  bbb" data\C-P'
 0:word split regex
->BUFFER: awk '/aa  bbb/ {print}' data
->CURSOR: 21
+>BUFFER: awk '/aa  bbb/ {print $0}' data
+>CURSOR: 24
 
   zletest $'grep -l regex data\C-P'
 0:print matching files
@@ -41,18 +41,18 @@
 
   zletest $'grep -v regex data\C-P'
 0:inverse match
->BUFFER: awk '!/regex/ {print}' data
->CURSOR: 20
+>BUFFER: awk '!/regex/ {print $0}' data
+>CURSOR: 23
 
   zletest $'grep -w regex data\C-P'
 0:Word match
->BUFFER: awk '/\<(regex)\>/ {print}' data
->CURSOR: 25
+>BUFFER: awk '/\<(regex)\>/ {print $0}' data
+>CURSOR: 28
 
   zletest $'grep -x regex data\C-P'
 0:Line match
->BUFFER: awk '/^(regex)$/ {print}' data
->CURSOR: 23
+>BUFFER: awk '/^(regex)$/ {print $0}' data
+>CURSOR: 26
 
   zletest $'grep -c regex data\C-P'
 0:Count matches
