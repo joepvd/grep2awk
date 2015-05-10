@@ -7,12 +7,17 @@
   else
     ZTST_unimplemented="the zsh/zpty module is not available"
   fi
-  zpath=( .. $zpath )
-  zle -N grep2awk
-  bindkey '' grep2awk
+  zpty_run 'fpath=( .. $fpath )'
+  zpty_run 'autoload -Uz grep2awk'
+  zpty_run 'zle -N grep2awk'
+  zpty_run 'bindkey "\C-P" grep2awk'
 
 %test
 
-  zletest $'grep aaa bbbb'
+
+  zletest $'grep aaa bbbb\C-P'
 0:Basic function
 >BUFFER: awk '/aaa/ {}' bbbb
+>CURSOR: 13
+
+
