@@ -46,11 +46,15 @@ regex2awkprog() {
     (( opt[x] > 0 )) && {
         re="^($re)$"
     }
-    re=/$re/
+    # Wrap in slashes, and replace any single quote with its
+    # ASCII code: 
+    re=/${re//\'/\\47}/
+
+    # Negate the pattern if told so: 
     (( opt[v] > 0 )) && {
         re="!$re"
     }
-    # TODO: Replace single quotes in the regex with \47.
+
     (( opt[i] > 0 )) && {
         prelude+="BEGIN{IGNORECASE=1}; "
     }
@@ -92,11 +96,11 @@ bre2ere() {
     # Basic Regular Expression to Extended Regular Expression
     #
     # What needs to be done:
-    # Replace \+, \{, \[, \|, \(, \) with 
-    #          +,  {,  [,  |,  (,  ) respectively. 
-    # And:     +,  {,  [,  |,  (,  ) with
-    #         \+, \{, \[, \|, \(, \). 
+    # Translate BRE: \+,\{,\[,\|,\(,\), +, {, [, |, (, )
+    #        to ERE:  +, {, [, |, (, ),\+,\{,\[,\|,\(,\)
+    #
     # But only if the backslash is not escaped with a backslash. 
+
     local bre ere i re
     bre=${(Q)1}
     ere=""
@@ -138,7 +142,7 @@ main() {
     local -a reply
     typeset -A opt
 
-    # Store line in $reply[@]:
+    # Store line as $reply[@]:
     split-shell-arguments
 
     flag=0
@@ -165,8 +169,8 @@ main() {
                     ;;
             esac
         elif [[ $flag = 1 && $reply[$i] = -* ]]; then
-            # It an option to grep? 
-            # If so, deal with the option. 
+            # It an option to grep? A regular expression of
+            # the options that are recognized: 
             grepopts="c|E|F|H|i|l|L|n|v|w|x"
             for ((l=1; l<$#reply[$i]; l++)); do
                 #check those options!
