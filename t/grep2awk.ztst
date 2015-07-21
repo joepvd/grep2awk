@@ -69,6 +69,13 @@
 >BUFFER: awk '/a\*b\[c\}d\?e.f\$g\]/ {print $0}'
 >CURSOR: 37
 
+  zletest $'grep \'a+b\[0-9]\+\\\'\C-P'
+0:From Basic Regular Expression to Extended Regular Expression
+>BUFFER: awk '/a\+b\[0-9]\+/ {print $0}'
+>CURSOR: 29
+
+
+
 
 %clean
 

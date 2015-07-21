@@ -3,7 +3,7 @@
 # and source it. zle will be set up.
 
 
-fpath=( $fpath[@] . )
+fpath=( . $fpath[@] )
 
 unfunction grep2awk 2>/dev/null
 autoload grep2awk
