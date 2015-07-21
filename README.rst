@@ -66,6 +66,16 @@ There is a testing library in the ``t``-directory, in which the testing framewor
 Bugs
 ----
 
-There are some bugs.  The conversion from Basic Regular Expressions (which bare ``grep`` uses) to Extended Regular Expressions (which ``egrep`` and ``awk`` use) has not been implemented. The treatment of backslashes in the conversion from Fixed String to Extended Regular Expression is not working.  Furthermore, the context options (``-A``, ``-B``, ``-C``) are not implemented, as well as ``-o`` (only-matching). Some fuky stuff with snooping aliases and the (deprecated) environment variable ``GREP_OPTIONS`` is as of yet not implemented. Also, colorized output is not supported. 
+There are some bugs. In no particular order:
+
+The treatment of backslashes in the conversion from Fixed String to Extended Regular Expression is not working completely. 
+
+bre2ere does not take character classes and their distinct escaping rules into account.
+
+The testing library chokes on some bre2ere functions. 
+
+Furthermore, the context options (``-A``, ``-B``, ``-C``) are not implemented, as well as ``-o`` (only-matching).  Also colorized matches are not supported. 
+
+Some funky stuff with snooping aliases and the (deprecated) environment variable ``GREP_OPTIONS`` is as of yet not implemented.
 
 Please let me know whether you like it, and what could be better to support your needs! 
