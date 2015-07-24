@@ -55,7 +55,7 @@ regex2awkprog() {
         re="!$re"
     }
 
-    (( opt[i] > 0 )) && {
+    (( opt[i] + opt[y] > 0 )) && {
         prelude+="BEGIN{IGNORECASE=1}; "
     }
     # The print action. Add some extra stuff if line count or file name
@@ -192,7 +192,7 @@ main() {
         elif [[ $flag = 1 && $reply[$i] = -* ]]; then
             # It an option to grep? A regular expression of
             # the options that are recognized: 
-            grepopts="c|E|F|H|i|l|L|n|v|w|x"
+            grepopts="c|E|F|H|i|l|L|n|v|w|x|y"
             for ((l=1; l<$#reply[$i]; l++)); do
                 #check those options!
                 o=${reply[$i]:$l:1}
