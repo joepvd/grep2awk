@@ -71,8 +71,8 @@
 
   zletest $'grep \'a+b\[0-9]\+\\\'\C-P'
 0:From Basic Regular Expression to Extended Regular Expression
->BUFFER: awk '/a\+b\[0-9]\+/ {print $0}'
->CURSOR: 29
+>BUFFER: awk '/a\+b[0-9]\+/ {print $0}'
+>CURSOR: 28
 
 
 

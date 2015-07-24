@@ -117,8 +117,8 @@ bre2ere() {
     # Basic Regular Expression to Extended Regular Expression
     #
     # What needs to be done:
-    # Translate BRE: \+,\{,\[,\|,\(,\), +, {, [, |, (, )
-    #        to ERE:  +, {, [, |, (, ),\+,\{,\[,\|,\(,\)
+    # Translate BRE: \+,\{,\},\|,\(,\), +, {, }, |, (, )
+    #        to ERE:  +, {, }, |, (, ),\+,\{,\},\|,\(,\)
     #
     # But only if the backslash is not escaped with a backslash. 
 
@@ -126,7 +126,7 @@ bre2ere() {
     bre=$1
     ere=""
     esc=off
-    specialchars="\+|\||\{|\[|\(|\)"
+    specialchars="\+|\||\{|\}|\(|\)"
     for i in {1..$#bre}; do
         if [[ ${bre[$i]} =~ $specialchars ]]; then
             if [[ $esc == on ]]; then
