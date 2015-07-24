@@ -14,6 +14,7 @@
 
 %test
 
+
   zletest $'grep regex data\C-P'
 0:Basic function
 >BUFFER: awk '/regex/ {print $0}' data
@@ -74,7 +75,10 @@
 >BUFFER: awk '/a\+b[0-9]\+/ {print $0}'
 >CURSOR: 28
 
-
+  zletest $'grep "a\(b\|c\)d" data\C-P'
+0:BRE2ERE: Subexpressions
+>BUFFER: awk '/a\(b\|c\)d/ {print $0}' data
+>CURSOR: 27
 
 
 %clean
