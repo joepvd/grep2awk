@@ -13,7 +13,6 @@
 #
 # Known bugs:
 # - The command conversions have not been thorougly tested
-# - From Fixed to ERE, there are issues with backslashes
 #
 # The files t/comptest and t/ztst.zsh are taken (and modified) from the
 # zsh project. This project can be used under the same terms as the zsh 
@@ -29,15 +28,16 @@ autoload -Uz split-shell-arguments
 regex2awkprog() {
     local re prelude action prog
 
-    re=${(Q)1}
+    re=${(Q)1} # Remove one level of quoting, so we have what
+               # grep would receive
 
     (( opt[F] > 0 )) && {
-        re="$(fixed2ere ${(q)re})"
+        re="$(fixed2ere $re)"
     }
 
     (( opt[F] + opt[E] + opt[P] == 0 )) && {
         # It is Basic Regular Expression
-        re="$(bre2ere ${(q)re})"
+        re="$(bre2ere $re)"
     }
 
     (( opt[w] > 0 )) && {
@@ -61,10 +61,13 @@ regex2awkprog() {
     # The print action. Add some extra stuff if line count or file name
     # are enabled.
     action="{print ${opt[H]:+FILENAME\":\"}${opt[n]:+NR\":\"}\$0}"
+
     # c, H, l and L are mutually exclusive. One of them will win. 
-    # TODO: Maybe should fail here explicitly:
-    #
-    #    (( opt[H] + opt[l] + opt[L] > 1 opt[c] )) && exit 1
+    (( opt[H] + opt[l] + opt[L] + opt[c] > 1 )) && {
+        zle -M "grep2awk:Options c, H, l and L are mutually exclusive."
+        zle -M "Exiting."
+        return 1
+    }
 
     (( opt[c] > 0 )) && {
         # This is incompatible with `grep -c`, as files where the count == 0
@@ -84,12 +87,30 @@ regex2awkprog() {
 }
 
 fixed2ere() {
-    local p
-    # Changing the special characters from a fixed string regex into
-    # a properly escaped Extended Regular Expression. Did not yet manage to 
-    # properly escape two consequtive backslash characters.
-    p=${${1}//\\/\\\\\\\\}
-    printf $p
+    local p specialchars ere
+    # We already receive a backslash escaped version of the
+    # string by virtue of the ``(q)``-flag when this function is called.
+    # That means that we need to transform the characters in the
+    # first line to the corresponding character sequences in the
+    # second line: 
+    #
+    #     +  |  {  }  [  ]  (  )  *  .  ?  \  $  ^
+    #    \+ \| \{ \} \[ \] \( \) \* \. \? \\ \$ \^
+
+    specialchars='\+|\||\{|\}|\[|\]|\(|\)|\*|\.|\?|\$|\^'
+    str=$1
+    ere=""
+    for i in {1..$#str}; do
+        if [[ $str[$i] =~ $specialchars ]]; then
+            ere+="\\\\$str[$i]"
+        elif [[ $str[$i] == '\' ]]; then
+            ere+="\\\\\\\\$str[$i]"
+        else
+            ere+="$str[$i]"
+        fi
+    done
+
+    printf $ere
 }
 
 bre2ere() {
@@ -102,27 +123,27 @@ bre2ere() {
     # But only if the backslash is not escaped with a backslash. 
 
     local bre ere i re
-    bre=${(Q)1}
+    bre=$1
     ere=""
     esc=off
     specialchars="\+|\||\{|\[|\(|\)"
     for i in {1..$#bre}; do
         if [[ ${bre[$i]} =~ $specialchars ]]; then
             if [[ $esc == on ]]; then
-                ere="${ere}${bre[$i]}"
+                ere+="$bre[$i]"
                 esc=off
             else
-                ere="${ere}\\\\${bre[$i]}"
+                ere+="\\\\$bre[$i]"
             fi
         elif [[ $bre[$i] == "\\" ]]; then
             if [[ $esc == on ]]; then
-                ere="${ere}\\\\\\\\"
+                ere+="\\\\\\\\"
                 esc=off
             else
                 esc=on
             fi
         else
-            ere="${ere}${bre[$i]}"
+            ere+="$bre[$i]"
             esc=off
         fi
     done

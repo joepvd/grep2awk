@@ -64,10 +64,10 @@
 >BUFFER: grep -P regex data
 >CURSOR: 18
 
-  zletest $'fgrep "a*b[c}d?e.f$g]"\C-P'
+  zletest $'fgrep \'a*b[c}d?e.f$g^h\\i]\'\C-P'
 0:fgrep: From fixed to ERE
->BUFFER: awk '/a\*b\[c\}d\?e.f\$g\]/ {print $0}'
->CURSOR: 37
+>BUFFER: awk '/a\*b\[c\}d\?e\.f\$g\^h\\i\]/ {print $0}'
+>CURSOR: 44
 
   zletest $'grep \'a+b\[0-9]\+\\\'\C-P'
 0:From Basic Regular Expression to Extended Regular Expression
@@ -78,6 +78,5 @@
 
 
 %clean
-
   zmodload -ui zsh/zpty
 

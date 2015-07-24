@@ -58,6 +58,8 @@ The following grep options are supported:
 Development
 -----------
 
+Patches and bug reports welcome! Main development takes place at https://github.com/joepvd/grep2awk/. 
+
 If you ``source`` the file ``init.zsh``, the development version of ``grep2awk`` will be made available under key binding ``<CTRL-P>``. Handy for quick testing.
 
 There is a testing library in the ``t``-directory, in which the testing framework from the `ZSH`-project has been adjusted to work with the currently installed shell.  Please run and update the tests when playing with the code. 
@@ -72,10 +74,10 @@ The treatment of backslashes in the conversion from Fixed String to Extended Reg
 
 bre2ere does not take character classes and their distinct escaping rules into account.
 
-The testing library chokes on some bre2ere functions. 
+The testing library chokes on some bre2ere functions. That might, however, by an artifact of ``$'...'``, ``zpty`` on my environment, or the testing infrastructure.
 
-Furthermore, the context options (``-A``, ``-B``, ``-C``) are not implemented, as well as ``-o`` (only-matching).  Also colorized matches are not supported. 
+Furthermore, the context options (``-A``, ``-B``, ``-C``) are not implemented, as well as ``-o`` (only-matching).  Also colorized matches are not supported. Whether these are considered bugs is unclear. 
 
-Some funky stuff with snooping aliases and the (deprecated) environment variable ``GREP_OPTIONS`` is as of yet not implemented.
+How to deal with customized ``grep`` commands? Alias with options? Suffix alias with options? As a function? The (depreciated) ``GREP_OPTIONS`` environment variable? Can the proper thing to do be detected, or is a ``zstyle``-mechanism warranted? 
 
 Please let me know whether you like it, and what could be better to support your needs! 
