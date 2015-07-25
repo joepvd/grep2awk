@@ -11,6 +11,9 @@
   zpty_run 'autoload -Uz grep2awk'
   zpty_run 'zle -N grep2awk'
   zpty_run 'bindkey "\C-P" grep2awk'
+  # The following two are needed for multiline editing hack
+  zpty_run 'bindkey "\C-J" accept-line' 
+  zpty_run 'bindkey "\C-A" up-history'
 
 %test
 
@@ -88,6 +91,14 @@
 0:Bracket expression: BRE
 >BUFFER: awk '/1[^]a-z]2/ {print $0}'
 >CURSOR: 26
+
+# Some juggling with retrieving back from history, as
+# multiline editing is only working as it should when
+# using history... 
+  zletest $'grep -F "aaa\nbbb" <<<""\C-J\C-A\C-P'
+0:Multiline -F regex
+>BUFFER: awk '/aaa|bbb/ {print $0}' <<<""
+>CURSOR: 24
 
 
 %clean

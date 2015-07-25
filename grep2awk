@@ -106,8 +106,14 @@ fixed2ere() {
     str=$1
     ere=""
     for i in {1..$#str}; do
+        print $i: \<$str[$i]\> >>log
         if [[ $str[$i] =~ $specialchars ]]; then
             ere+="\\\\$str[$i]"
+        elif [[ $str[$i] == $'\n' ]]; then
+            # This works after arrowing up into history, but not 
+            # directly after writing it. Is there a way to detect
+            # if this is the case? 
+            ere+='|'
         elif [[ $str[$i] == '\' ]]; then
             ere+="\\\\\\\\$str[$i]"
         else
