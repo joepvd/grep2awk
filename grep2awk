@@ -29,7 +29,7 @@ regex2awkprog() {
     local re prelude action prog
 
     re=${(Q)1} # Remove one level of quoting, so we have what
-               # grep would receive
+               # grep would receive.
 
     (( opt[F] > 0 )) && {
         re="$(fixed2ere $re)"
@@ -37,7 +37,8 @@ regex2awkprog() {
 
     # A sanity check:
     (( opt[E] + opt[F] + opt[G] + opt[P] > 1 )) && {
-        zle -M "Options E, F, G and P are mutually exclusive. Exiting."
+        zle -M "grep2awk:Options E, F, G and P are mutually exclusive."
+        zle -M "Exiting."
         return 1
     }
     (( opt[G] == 1 || opt[E] + opt[F] + opt[P] == 0 )) && {
@@ -106,7 +107,6 @@ fixed2ere() {
     str=$1
     ere=""
     for i in {1..$#str}; do
-        print $i: \<$str[$i]\> >>log
         if [[ $str[$i] =~ $specialchars ]]; then
             ere+="\\\\$str[$i]"
         elif [[ $str[$i] == $'\n' ]]; then
@@ -161,11 +161,6 @@ bre2ere() {
     print $ere
 }
 
-swap_command() {
-    flag=1
-    reply[$i]="awk"
-    (( cursor += $#reply[$i] ))
-}
 
 main() {
     # Needs to be in its own scope, to not have the variables leak to
@@ -174,9 +169,21 @@ main() {
     local -a reply
     typeset -A opt
 
+    swap_command() {
+        flag=1
+        reply[$i]="awk"
+    }
+
     # Store line as $reply[@]:
     split-shell-arguments
 
+    # `flag` keeps the program state while looping through the splitted
+    # shell words. Its semantics:
+    # flag==0:  No 'grep', egrep', 'fgrep' encountered yet.
+    # flag==1:  Set when grep command is replaced by awk
+    #           command. Now, options will be parsed until 
+    #           there are no options anymore.
+    # flag==2:  The regex is being parsed now.
     flag=0
     cursor=0
     for (( i=1; i<=$#reply; i++ )); do 
@@ -190,15 +197,17 @@ main() {
             case $reply[$i] in
                 (grep)
                     swap_command
-                    ;;
+                    ;|
                 (egrep)
                     swap_command
                     typeset "opt[E]"=1
-                    ;;
+                    ;|
                 (fgrep)
                     swap_command
                     typeset "opt[F]"=1
-                    ;;
+                    ;|
+                (*)
+                    (( cursor += $#reply[$i] ))
             esac
         elif [[ $flag = 1 && $reply[$i] = -* ]]; then
             # It an option to grep? A regular expression of
