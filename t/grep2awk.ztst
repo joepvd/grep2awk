@@ -100,10 +100,10 @@
 >BUFFER: awk '/aaa|bbb/ {print $0}' <<<""
 >CURSOR: 24
 
-  zletest $'echo aaa | grep bbb | tail'
+  zletest $'echo aaa | grep bbb | tail\C-P'
 0:Cursor placement in compounded command
 >BUFFER: echo aaa | awk '/bbb/ {print $0}' | tail
-> CURSOR 26
+>CURSOR: 31
 
 %clean
   zmodload -ui zsh/zpty
