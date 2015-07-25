@@ -14,7 +14,6 @@
 
 %test
 
-
   zletest $'grep regex data\C-P'
 0:Basic function
 >BUFFER: awk '/regex/ {print $0}' data
@@ -79,6 +78,16 @@
 0:BRE2ERE: Subexpressions
 >BUFFER: awk '/a\(b\|c\)d/ {print $0}' data
 >CURSOR: 27
+
+  zletest $'grep -E "1[^]a-z]2"\C-P'
+0:Bracket expression: ERE
+>BUFFER: awk '/1[^]a-z]2/ {print $0}'
+>CURSOR: 26
+
+  zletest $'grep "1[^]a-z]2"\C-P'
+0:Bracket expression: BRE
+>BUFFER: awk '/1[^]a-z]2/ {print $0}'
+>CURSOR: 26
 
 
 %clean

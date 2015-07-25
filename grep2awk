@@ -130,7 +130,7 @@ bre2ere() {
     for i in {1..$#bre}; do
         if [[ ${bre[$i]} =~ $specialchars ]]; then
             if [[ $esc == on ]]; then
-                ere+="$bre[$i]"
+                ere+="$bre[$i]" # The escape sign is dropped now
                 esc=off
             else
                 ere+="\\\\$bre[$i]"
