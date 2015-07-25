@@ -35,7 +35,12 @@ regex2awkprog() {
         re="$(fixed2ere $re)"
     }
 
-    (( opt[F] + opt[E] + opt[P] == 0 )) && {
+    # A sanity check:
+    (( opt[E] + opt[F] + opt[G] + opt[P] > 1 )) && {
+        zle -M "Options E, F, G and P are mutually exclusive. Exiting."
+        return 1
+    }
+    (( opt[G] == 1 || opt[E] + opt[F] + opt[P] == 0 )) && {
         # It is Basic Regular Expression
         re="$(bre2ere $re)"
     }
@@ -192,7 +197,7 @@ main() {
         elif [[ $flag = 1 && $reply[$i] = -* ]]; then
             # It an option to grep? A regular expression of
             # the options that are recognized: 
-            grepopts="c|E|F|H|i|l|L|n|v|w|x|y"
+            grepopts="c|E|F|G|H|i|l|L|n|v|w|x|y"
             for ((l=1; l<$#reply[$i]; l++)); do
                 #check those options!
                 o=${reply[$i]:$l:1}

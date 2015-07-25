@@ -84,7 +84,7 @@
 >BUFFER: awk '/1[^]a-z]2/ {print $0}'
 >CURSOR: 26
 
-  zletest $'grep "1[^]a-z]2"\C-P'
+  zletest $'grep -G "1[^]a-z]2"\C-P'
 0:Bracket expression: BRE
 >BUFFER: awk '/1[^]a-z]2/ {print $0}'
 >CURSOR: 26
