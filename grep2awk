@@ -193,7 +193,7 @@ main() {
             # program yet (flag < 2). 
             len=$#reply[$i]
             (( cursor += len ))
-        elif [[ $flag = 0 ]]; then
+        elif [[ $flag == 0 ]]; then
             case $reply[$i] in
                 (grep)
                     swap_command
