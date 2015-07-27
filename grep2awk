@@ -242,7 +242,6 @@ main() {
             # The fall-through for opt_or_reg OR regex:
             # This is the regex.
             reply[$i]=$(regex2awkprog $reply[$i])
-            print $reply[$i]
             (( cursor += $#reply[$i] - 2 ))
             flag=3
         fi
