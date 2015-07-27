@@ -25,7 +25,7 @@ emulate -L zsh
 setopt extendedglob
 autoload -Uz split-shell-arguments
 
-main() {
+grep2awk() {
     # Needs to be in its own scope, to not have the variables leak to
     # the main shell process.
     local replacement_line REPLY REPLY2 flag cursor grepopts
@@ -185,7 +185,6 @@ main() {
         echo $($1 "$@")
         return $?
     }
-    echo now here
 
     # Store line as $reply[@]:
     split-shell-arguments
@@ -267,7 +266,7 @@ main() {
     CURSOR=cursor
 }
 
-main "$@"
+grep2awk "$@"
 
 
 # vim: ft=zsh
