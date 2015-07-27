@@ -158,7 +158,7 @@ bre2ere() {
             esc=off
         fi
     done
-    print $ere
+    print -- $ere
 }
 
 
@@ -171,7 +171,7 @@ main() {
 
     swap_command() {
         flag=1
-        reply[$i]="awk"
+        reply[$i]="awk --"
     }
 
     # Store line as $reply[@]:
@@ -181,16 +181,16 @@ main() {
     # shell words. Its semantics:
     # flag==0:  No 'grep', egrep', 'fgrep' encountered yet.
     # flag==1:  Set when grep command is replaced by awk
-    #           command. Now, options will be parsed until 
-    #           there are no options anymore.
-    # flag==2:  The regex is being parsed now.
+    #           command. Options or regex. 
+    # flag==2:  Regex (End of options arrived). 
+    # flag==3:  The rest.
     flag=0
     cursor=0
     for (( i=1; i<=$#reply; i++ )); do 
-        if (( i%2==1 && flag < 2 )); then
+        if (( i%2==1 && flag < 3 )); then
             # Uneven "words" are whitespace. Only interested in changing the
             # cursor position if exchanging the regex is not replaced by the awk
-            # program yet (flag < 2). 
+            # program yet (flag < 3). 
             len=$#reply[$i]
             (( cursor += len ))
         elif [[ $flag == 0 ]]; then
@@ -209,35 +209,42 @@ main() {
                 (*)
                     (( cursor += $#reply[$i] ))
             esac
-        elif [[ $flag = 1 && $reply[$i] = -* ]]; then
-            # It an option to grep? A regular expression of
+        elif [[ $flag == 1 && $reply[$i] = -* ]]; then
+            # Is it an option to grep? A regular expression of
             # the options that are recognized: 
             grepopts="c|E|F|G|H|i|l|L|n|v|w|x|y"
-            for ((l=1; l<$#reply[$i]; l++)); do
-                #check those options!
-                o=${reply[$i]:$l:1}
-                if [[ $o =~ $grepopts ]]; then
-                    typeset "opt[$o]"=1
-                elif [[ $o == "-" ]]; then
-                    zle -M "grep2awk: Long options to grep are not supported"
-                    return 1
-                else
-                    zle -M "grep2awk: Option $o is not supported"
-                    return 1
-                fi
-            done
+            # Is it the End of Options-marker? 
+            if [[ $reply[$i] == "--" ]]; then
+                flag=2
+            else
+                for ((l=1; l<$#reply[$i]; l++)); do
+                    #check those options!
+                    o=${reply[$i]:$l:1}
+                    if [[ $o =~ $grepopts ]]; then
+                        typeset "opt[$o]"=1
+                    elif [[ $o == "-" ]]; then
+                        zle -M "grep2awk: Long options to grep are not supported"
+                        return 1
+                    else
+                        zle -M "grep2awk: Option $o is not supported"
+                        return 1
+                    fi
+                done
+                [[ $o == "e" ]] && flag=2
+            fi
 
-            # For now: Delete the options, and the now superfluous whitespace:
+            # Delete the options, and the now superfluous whitespace:
             reply[$i]=""
             reply[$i+1]=""
             # And leave the cursor pointer where it was. 
 
-        elif [[ $flag = 1 ]]; then
-            # This is the regex. Replace with the awk program. 
-            
+        elif (( flag==1 || flag==2 )); then
+            # The fall-through for opt_or_reg OR regex:
+            # This is the regex.
             reply[$i]=$(regex2awkprog $reply[$i])
+            print $reply[$i]
             (( cursor += $#reply[$i] - 2 ))
-            flag=2
+            flag=3
         fi
         # Append the current version of $reply[$i] to replacement_line: 
         replacement_line+=$reply[$i]

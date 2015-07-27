@@ -19,48 +19,48 @@
 
   zletest $'grep regex data\C-P'
 0:Basic function
->BUFFER: awk '/regex/ {print $0}' data
->CURSOR: 22
+>BUFFER: awk -- '/regex/ {print $0}' data
+>CURSOR: 25
 
   zletest $'grep "aa  bbb" data\C-P'
 0:word split regex
->BUFFER: awk '/aa  bbb/ {print $0}' data
->CURSOR: 24
+>BUFFER: awk -- '/aa  bbb/ {print $0}' data
+>CURSOR: 27
 
   zletest $'grep -l regex data\C-P'
 0:print matching files
->BUFFER: awk '/regex/ {print FILENAME; nextfile}' data
->CURSOR: 38
+>BUFFER: awk -- '/regex/ {print FILENAME; nextfile}' data
+>CURSOR: 41
 
   zletest $'grep -L regex data\C-P'
 0:print not matching files
->BUFFER: awk 'BEGINFILE{flag=0};ENDFILE{if (flag==0)print FILENAME}; /regex/ {flag=1; nextfile}' data
->CURSOR: 85
+>BUFFER: awk -- 'BEGINFILE{flag=0};ENDFILE{if (flag==0)print FILENAME}; /regex/ {flag=1; nextfile}' data
+>CURSOR: 88
 
   zletest $'grep -H regex data\C-P'
 0:print filename
->BUFFER: awk '/regex/ {print FILENAME":"$0}' data
->CURSOR: 33
+>BUFFER: awk -- '/regex/ {print FILENAME":"$0}' data
+>CURSOR: 36
 
   zletest $'grep -v regex data\C-P'
 0:inverse match
->BUFFER: awk '!/regex/ {print $0}' data
->CURSOR: 23
+>BUFFER: awk -- '!/regex/ {print $0}' data
+>CURSOR: 26
 
   zletest $'grep -w regex data\C-P'
 0:Word match
->BUFFER: awk '/\<(regex)\>/ {print $0}' data
->CURSOR: 28
+>BUFFER: awk -- '/\<(regex)\>/ {print $0}' data
+>CURSOR: 31
 
   zletest $'grep -x regex data\C-P'
 0:Line match
->BUFFER: awk '/^(regex)$/ {print $0}' data
->CURSOR: 26
+>BUFFER: awk -- '/^(regex)$/ {print $0}' data
+>CURSOR: 29
 
   zletest $'grep -c regex data\C-P'
 0:Count matches
->BUFFER: awk 'BEGINFILE{c=0};ENDFILE{if(c>0)print FILENAME":"c}; /regex/ {c++}' data
->CURSOR: 68
+>BUFFER: awk -- 'BEGINFILE{c=0};ENDFILE{if(c>0)print FILENAME":"c}; /regex/ {c++}' data
+>CURSOR: 71
 
   zletest $'grep -P regex data\C-P'
 0:No support for pcre
@@ -69,41 +69,46 @@
 
   zletest $'fgrep \'a*b[c}d?e.f$g^h\\i]\'\C-P'
 0:fgrep: From fixed to ERE
->BUFFER: awk '/a\*b\[c\}d\?e\.f\$g\^h\\i\]/ {print $0}'
->CURSOR: 44
+>BUFFER: awk -- '/a\*b\[c\}d\?e\.f\$g\^h\\i\]/ {print $0}'
+>CURSOR: 47
 
   zletest $'grep \'a+b\[0-9]\+\\\'\C-P'
 0:From Basic Regular Expression to Extended Regular Expression
->BUFFER: awk '/a\+b[0-9]\+/ {print $0}'
->CURSOR: 28
+>BUFFER: awk -- '/a\+b[0-9]\+/ {print $0}'
+>CURSOR: 31
 
   zletest $'grep "a\(b\|c\)d" data\C-P'
 0:BRE2ERE: Subexpressions
->BUFFER: awk '/a\(b\|c\)d/ {print $0}' data
->CURSOR: 27
+>BUFFER: awk -- '/a\(b\|c\)d/ {print $0}' data
+>CURSOR: 30
 
   zletest $'grep -E "1[^]a-z]2"\C-P'
 0:Bracket expression: ERE
->BUFFER: awk '/1[^]a-z]2/ {print $0}'
->CURSOR: 26
+>BUFFER: awk -- '/1[^]a-z]2/ {print $0}'
+>CURSOR: 29
 
   zletest $'grep -G "1[^]a-z]2"\C-P'
 0:Bracket expression: BRE
->BUFFER: awk '/1[^]a-z]2/ {print $0}'
->CURSOR: 26
+>BUFFER: awk -- '/1[^]a-z]2/ {print $0}'
+>CURSOR: 29
 
 # Some juggling with retrieving back from history, as
 # multiline editing is only working as it should when
 # using history... 
   zletest $'grep -F "aaa\nbbb" <<<""\C-J\C-A\C-P'
 0:Multiline -F regex
->BUFFER: awk '/aaa|bbb/ {print $0}' <<<""
->CURSOR: 24
+>BUFFER: awk -- '/aaa|bbb/ {print $0}' <<<""
+>CURSOR: 27
 
   zletest $'echo aaa | grep bbb | tail\C-P'
 0:Cursor placement in compounded command
->BUFFER: echo aaa | awk '/bbb/ {print $0}' | tail
->CURSOR: 31
+>BUFFER: echo aaa | awk -- '/bbb/ {print $0}' | tail
+>CURSOR: 34
+
+  zletest $'grep -l -- -a -b\C-P'
+0:End of Options marker
+>BUFFER: awk -- '/-a/ {print FILENAME; nextfile}' -b
+>CURSOR: 38
 
 %clean
   zmodload -ui zsh/zpty
