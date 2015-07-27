@@ -108,20 +108,20 @@ fixed2ere() {
     ere=""
     for i in {1..$#str}; do
         if [[ $str[$i] =~ $specialchars ]]; then
-            ere+="\\\\$str[$i]"
+            ere+="\\$str[$i]"
         elif [[ $str[$i] == $'\n' ]]; then
             # This works after arrowing up into history, but not
             # directly after writing it. Is there a way to detect
             # if this is the case?
             ere+='|'
         elif [[ $str[$i] == '\' ]]; then
-            ere+="\\\\\\\\$str[$i]"
+            ere+="\\\\$str[$i]"
         else
             ere+="$str[$i]"
         fi
     done
 
-    printf -- $ere
+    printf -- "%s" "$ere"
 }
 
 bre2ere() {
@@ -158,7 +158,7 @@ bre2ere() {
             esc=off
         fi
     done
-    print -- $ere
+    printf -- "%s" "$ere"
 }
 
 
