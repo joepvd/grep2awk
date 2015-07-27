@@ -89,7 +89,7 @@ regex2awkprog() {
         action="{flag=1; nextfile}"
     }
     prog="${prelude}${re} $action"
-    printf ${(qq)prog}
+    printf -- ${(qq)prog}
 }
 
 fixed2ere() {
@@ -121,7 +121,7 @@ fixed2ere() {
         fi
     done
 
-    printf $ere
+    printf -- $ere
 }
 
 bre2ere() {
