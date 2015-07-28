@@ -15,7 +15,25 @@
   zpty_run 'bindkey "\C-J" accept-line' 
   zpty_run 'bindkey "\C-A" up-history'
 
+  # Setting up the function testing without interference
+  # of zle:
+  fpath=( .. $fpath )
+  autoload -Uz grep2awk
+
 %test
+
+  grep2awk bre2ere 'a|b'
+0:bre2ere: Pipe
+>a\|b
+
+  grep2awk bre2ere 'a+b'
+0:bre2ere: Plus
+>a\+b
+
+  grep2awk bre2ere 'a(b|c)'
+0:bre2ere: Alternation
+>a\(b\|c\)
+
 
   zletest $'grep regex data\C-P'
 0:Basic function
