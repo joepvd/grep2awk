@@ -25,153 +25,165 @@ emulate -L zsh
 setopt extendedglob
 autoload -Uz split-shell-arguments
 
-regex2awkprog() {
-    local re prelude action prog
-
-    re=${(Q)1} # Remove one level of quoting, so we have what
-               # grep would receive.
-
-    (( opt[F] > 0 )) && {
-        re="$(fixed2ere $re)"
-    }
-
-    # A sanity check:
-    (( opt[E] + opt[F] + opt[G] + opt[P] > 1 )) && {
-        zle -M "grep2awk:Options E, F, G and P are mutually exclusive."
-        zle -M "Exiting."
-        return 1
-    }
-    (( opt[G] == 1 || opt[E] + opt[F] + opt[P] == 0 )) && {
-        # It is Basic Regular Expression
-        re="$(bre2ere $re)"
-    }
-
-    (( opt[w] > 0 )) && {
-        re="\\<($re)\\>"
-    }
-    (( opt[x] > 0 )) && {
-        re="^($re)$"
-    }
-    # Wrap in slashes, and replace any single quote with its
-    # ASCII code:
-    re=/${re//\'/\\47}/
-
-    # Negate the pattern if told so:
-    (( opt[v] > 0 )) && {
-        re="!$re"
-    }
-
-    (( opt[i] + opt[y] > 0 )) && {
-        prelude+="BEGIN{IGNORECASE=1}; "
-    }
-    # The print action. Add some extra stuff if line count or file name
-    # are enabled.
-    action="{print ${opt[H]:+FILENAME\":\"}${opt[n]:+NR\":\"}\$0}"
-
-    # c, H, l and L are mutually exclusive. One of them will win.
-    (( opt[H] + opt[l] + opt[L] + opt[c] > 1 )) && {
-        zle -M "grep2awk:Options c, H, l and L are mutually exclusive."
-        zle -M "Exiting."
-        return 1
-    }
-
-    (( opt[c] > 0 )) && {
-        # This is incompatible with `grep -c`, as files where the count == 0
-        # are not displayed.  This is saner behavior, IMHO.
-        prelude+='BEGINFILE{c=0};ENDFILE{if(c>0)print FILENAME":"c}; '
-        action='{c++}'
-    }
-    (( opt[l] > 0 )) && {
-        action="{print FILENAME; nextfile}"
-    }
-    (( opt[L] > 0 )) && {
-        prelude+="BEGINFILE{flag=0};ENDFILE{if (flag==0)print FILENAME}; "
-        action="{flag=1; nextfile}"
-    }
-    prog="${prelude}${re} $action"
-    printf -- ${(qq)prog}
-}
-
-fixed2ere() {
-    local p specialchars ere
-    # We already receive a backslash escaped version of the
-    # string by virtue of the ``(q)``-flag when this function is called.
-    # That means that we need to transform the characters in the
-    # first line to the corresponding character sequences in the
-    # second line:
-    #
-    #     +  |  {  }  [  ]  (  )  *  .  ?  \  $  ^
-    #    \+ \| \{ \} \[ \] \( \) \* \. \? \\ \$ \^
-
-    specialchars='\+|\||\{|\}|\[|\]|\(|\)|\*|\.|\?|\$|\^'
-    str=$1
-    ere=""
-    for i in {1..$#str}; do
-        if [[ $str[$i] =~ $specialchars ]]; then
-            ere+="\\$str[$i]"
-        elif [[ $str[$i] == $'\n' ]]; then
-            # This works after arrowing up into history, but not
-            # directly after writing it. Is there a way to detect
-            # if this is the case?
-            ere+='|'
-        elif [[ $str[$i] == '\' ]]; then
-            ere+="\\\\$str[$i]"
-        else
-            ere+="$str[$i]"
-        fi
-    done
-
-    printf -- "%s" "$ere"
-}
-
-bre2ere() {
-    # Basic Regular Expression to Extended Regular Expression
-    #
-    # What needs to be done:
-    # Translate BRE: \+,\{,\},\|,\(,\), +, {, }, |, (, )
-    #        to ERE:  +, {, }, |, (, ),\+,\{,\},\|,\(,\)
-    #
-    # But only if the backslash is not escaped with a backslash.
-
-    local bre ere i re
-    bre=$1
-    ere=""
-    esc=off
-    specialchars="\+|\||\{|\}|\(|\)"
-    for i in {1..$#bre}; do
-        if [[ ${bre[$i]} =~ $specialchars ]]; then
-            if [[ $esc == on ]]; then
-                ere+="$bre[$i]" # The escape sign is dropped now
-                esc=off
-            else
-                ere+="\\\\$bre[$i]"
-            fi
-        elif [[ $bre[$i] == "\\" ]]; then
-            if [[ $esc == on ]]; then
-                ere+="\\\\\\\\"
-                esc=off
-            else
-                esc=on
-            fi
-        else
-            ere+="$bre[$i]"
-            esc=off
-        fi
-    done
-    printf -- "%s" "$ere"
-}
-
-
-main() {
+grep2awk() {
     # Needs to be in its own scope, to not have the variables leak to
     # the main shell process.
     local replacement_line REPLY REPLY2 flag cursor grepopts
     local -a reply
     typeset -A opt
 
+    # Define some functions first:
+    #   regex2awkprog
+    #   fixed2ere
+    #   bre2ere
+    #   swapcommand
+
+    regex2awkprog() {
+        local re prelude action prog
+
+        re=${(Q)1} # Remove one level of quoting, so we have what
+                   # grep would receive.
+
+        (( opt[F] > 0 )) && {
+            re="$(fixed2ere $re)"
+        }
+
+        # A sanity check:
+        (( opt[E] + opt[F] + opt[G] + opt[P] > 1 )) && {
+            zle -M "grep2awk:Options E, F, G and P are mutually exclusive."
+            zle -M "Exiting."
+            return 1
+        }
+        (( opt[G] == 1 || opt[E] + opt[F] + opt[P] == 0 )) && {
+            # It is Basic Regular Expression
+            re="$(bre2ere $re)"
+        }
+
+        (( opt[w] > 0 )) && {
+            re="\\<($re)\\>"
+        }
+        (( opt[x] > 0 )) && {
+            re="^($re)$"
+        }
+        # Wrap in slashes, and replace any single quote with its
+        # ASCII code:
+        re=/${re//\'/\\47}/
+
+        # Negate the pattern if told so:
+        (( opt[v] > 0 )) && {
+            re="!$re"
+        }
+
+        (( opt[i] + opt[y] > 0 )) && {
+            prelude+="BEGIN{IGNORECASE=1}; "
+        }
+        # The print action. Add some extra stuff if line count or file name
+        # are enabled.
+        action="{print ${opt[H]:+FILENAME\":\"}${opt[n]:+NR\":\"}\$0}"
+
+        # c, H, l and L are mutually exclusive. One of them will win.
+        (( opt[H] + opt[l] + opt[L] + opt[c] > 1 )) && {
+            zle -M "grep2awk:Options c, H, l and L are mutually exclusive."
+            zle -M "Exiting."
+            return 1
+        }
+
+        (( opt[c] > 0 )) && {
+            # This is incompatible with `grep -c`, as files where the count == 0
+            # are not displayed.  This is saner behavior, IMHO.
+            prelude+='BEGINFILE{c=0};ENDFILE{if(c>0)print FILENAME":"c}; '
+            action='{c++}'
+        }
+        (( opt[l] > 0 )) && {
+            action="{print FILENAME; nextfile}"
+        }
+        (( opt[L] > 0 )) && {
+            prelude+="BEGINFILE{flag=0};ENDFILE{if (flag==0)print FILENAME}; "
+            action="{flag=1; nextfile}"
+        }
+        prog="${prelude}${re} $action"
+        printf -- ${(qq)prog}
+    }
+
+    fixed2ere() {
+        local p specialchars ere
+        # We already receive a backslash escaped version of the
+        # string by virtue of the ``(q)``-flag when this function is called.
+        # That means that we need to transform the characters in the
+        # first line to the corresponding character sequences in the
+        # second line:
+        #
+        #     +  |  {  }  [  ]  (  )  *  .  ?  \  $  ^
+        #    \+ \| \{ \} \[ \] \( \) \* \. \? \\ \$ \^
+
+        specialchars='\+|\||\{|\}|\[|\]|\(|\)|\*|\.|\?|\$|\^'
+        str=$1
+        ere=""
+        for i in {1..$#str}; do
+            if [[ $str[$i] =~ $specialchars ]]; then
+                ere+="\\$str[$i]"
+            elif [[ $str[$i] == $'\n' ]]; then
+                # This works after arrowing up into history, but not
+                # directly after writing it. Is there a way to detect
+                # if this is the case?
+                ere+='|'
+            elif [[ $str[$i] == '\' ]]; then
+                ere+="\\\\$str[$i]"
+            else
+                ere+="$str[$i]"
+            fi
+        done
+
+        printf -- "%s" "$ere"
+    }
+
+    bre2ere() {
+        # Basic Regular Expression to Extended Regular Expression
+        #
+        # What needs to be done:
+        # Translate BRE: \+,\{,\},\|,\(,\), +, {, }, |, (, )
+        #        to ERE:  +, {, }, |, (, ),\+,\{,\},\|,\(,\)
+        #
+        # But only if the backslash is not escaped with a backslash.
+
+        local bre ere i re
+        bre=$1
+        ere=""
+        esc=off
+        specialchars="\+|\||\{|\}|\(|\)"
+        for i in {1..$#bre}; do
+            if [[ ${bre[$i]} =~ $specialchars ]]; then
+                if [[ $esc == on ]]; then
+                    ere+="$bre[$i]" # The escape sign is dropped now
+                    esc=off
+                else
+                    ere+="\\\\$bre[$i]"
+                fi
+            elif [[ $bre[$i] == "\\" ]]; then
+                if [[ $esc == on ]]; then
+                    ere+="\\\\\\\\"
+                    esc=off
+                else
+                    esc=on
+                fi
+            else
+                ere+="$bre[$i]"
+                esc=off
+            fi
+        done
+        printf -- "%s" "$ere"
+    }
+
     swap_command() {
         flag=1
         reply[$i]="awk --"
+    }
+
+    # Some debugging/testing convenience functions:
+
+    [[ -n $1 ]] && {
+        echo $($1 "$@")
+        return $?
     }
 
     # Store line as $reply[@]:
@@ -254,7 +266,7 @@ main() {
     CURSOR=cursor
 }
 
-main
+grep2awk "$@"
 
 
 # vim: ft=zsh
