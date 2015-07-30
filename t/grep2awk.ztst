@@ -22,6 +22,8 @@
 
 %test
 
+# Start with unit testing the re transform functions.
+
   grep2awk bre2ere 'a|b'
 0:bre2ere: Pipe
 >a\|b
@@ -34,87 +36,87 @@
 0:bre2ere: Alternation
 >a\(b\|c\)
 
+  grep2awk bre2ere 'a+b[0-9]\+'
+0:bre2ere: Some stuff
+>a\+b[0-9]+
 
-  zletest $'grep regex data\C-P'
+  grep2awk bre2ere 'a\(b\|c\)d'
+0:bre2ere: Subexpressions
+>a(b|c)d
+
+  grep2awk bre2ere "1[^]a-z]2"
+0:bre2ere: Bracket expression: ERE
+>1[^]a-z]2
+
+  grep2awk bre2ere "1[^]a-z]2"
+0:Bracket expression: BRE
+>1[^]a-z]2
+
+  grep2awk fixed2ere 'a*b[c}d?e.f$g^h\i]'
+0:fixed2ere
+>a\*b\[c\}d\?e\.f\$g\^h\\i\]
+
+# Then the (much slower) testing of zle itself:
+
+  zletest $'grep re f\C-P'
 0:Basic function
->BUFFER: awk -- '/regex/ {print $0}' data
->CURSOR: 25
+>BUFFER: awk -- '/re/ {print $0}' f
+>CURSOR: 22
 
-  zletest $'grep "aa  bbb" data\C-P'
-0:word split regex
->BUFFER: awk -- '/aa  bbb/ {print $0}' data
->CURSOR: 27
+# Test outside of scope of this project.
+#
+#  zletest $'grep "aa  bbb" f\C-P'
+#0:word split re
+#>BUFFER: awk -- '/aa  bbb/ {print $0}' f
+#>CURSOR: 27
 
-  zletest $'grep -l regex data\C-P'
+# Tests of single options:
+
+  zletest $'grep -l re f\C-P'
 0:print matching files
->BUFFER: awk -- '/regex/ {print FILENAME; nextfile}' data
->CURSOR: 41
+>BUFFER: awk -- '/re/ {print FILENAME; nextfile}' f
+>CURSOR: 38
 
-  zletest $'grep -L regex data\C-P'
+  zletest $'grep -L re f\C-P'
 0:print not matching files
->BUFFER: awk -- 'BEGINFILE{flag=0};ENDFILE{if (flag==0)print FILENAME}; /regex/ {flag=1; nextfile}' data
->CURSOR: 88
+>BUFFER: awk -- 'BEGINFILE{flag=0};ENDFILE{if (flag==0)print FILENAME}; /re/ {flag=1; nextfile}' f
+>CURSOR: 85
 
-  zletest $'grep -H regex data\C-P'
+  zletest $'grep -H re f\C-P'
 0:print filename
->BUFFER: awk -- '/regex/ {print FILENAME":"$0}' data
->CURSOR: 36
+>BUFFER: awk -- '/re/ {print FILENAME":"$0}' f
+>CURSOR: 33
 
-  zletest $'grep -v regex data\C-P'
+  zletest $'grep -v re f\C-P'
 0:inverse match
->BUFFER: awk -- '!/regex/ {print $0}' data
+>BUFFER: awk -- '!/re/ {print $0}' f
+>CURSOR: 23
+
+  zletest $'grep -w re f\C-P'
+0:Word match
+>BUFFER: awk -- '/\<(re)\>/ {print $0}' f
+>CURSOR: 28
+
+  zletest $'grep -x re f\C-P'
+0:Line match
+>BUFFER: awk -- '/^(re)$/ {print $0}' f
 >CURSOR: 26
 
-  zletest $'grep -w regex data\C-P'
-0:Word match
->BUFFER: awk -- '/\<(regex)\>/ {print $0}' data
->CURSOR: 31
-
-  zletest $'grep -x regex data\C-P'
-0:Line match
->BUFFER: awk -- '/^(regex)$/ {print $0}' data
->CURSOR: 29
-
-  zletest $'grep -c regex data\C-P'
+  zletest $'grep -c re f\C-P'
 0:Count matches
->BUFFER: awk -- 'BEGINFILE{c=0};ENDFILE{if(c>0)print FILENAME":"c}; /regex/ {c++}' data
->CURSOR: 71
+>BUFFER: awk -- 'BEGINFILE{c=0};ENDFILE{if(c>0)print FILENAME":"c}; /re/ {c++}' f
+>CURSOR: 68
 
-  zletest $'grep -P regex data\C-P'
+  zletest $'grep -P re f\C-P'
 0:No support for pcre
->BUFFER: grep -P regex data
->CURSOR: 18
-
-  zletest $'fgrep \'a*b[c}d?e.f$g^h\\i]\'\C-P'
-0:fgrep: From fixed to ERE
->BUFFER: awk -- '/a\*b\[c\}d\?e\.f\$g\^h\\i\]/ {print $0}'
->CURSOR: 47
-
-  zletest $'grep \'a+b\[0-9]\+\\\'\C-P'
-0:From Basic Regular Expression to Extended Regular Expression
->BUFFER: awk -- '/a\+b[0-9]\+/ {print $0}'
->CURSOR: 31
-
-  zletest $'grep "a\(b\|c\)d" data\C-P'
-0:BRE2ERE: Subexpressions
->BUFFER: awk -- '/a\(b\|c\)d/ {print $0}' data
->CURSOR: 30
-
-  zletest $'grep -E "1[^]a-z]2"\C-P'
-0:Bracket expression: ERE
->BUFFER: awk -- '/1[^]a-z]2/ {print $0}'
->CURSOR: 29
-
-  zletest $'grep -G "1[^]a-z]2"\C-P'
-0:Bracket expression: BRE
->BUFFER: awk -- '/1[^]a-z]2/ {print $0}'
->CURSOR: 29
+>BUFFER: grep -P re f
+>CURSOR: 12
 
 # Some juggling with retrieving back from history, as
 # multiline editing is only working as it should when
 # using history... 
   zletest $'grep -F "aaa\nbbb" <<<""\C-J\C-A\C-P'
-0:Multiline -F regex
+0:Multiline -F re
 >BUFFER: awk -- '/aaa|bbb/ {print $0}' <<<""
 >CURSOR: 27
 
