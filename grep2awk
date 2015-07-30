@@ -151,9 +151,15 @@ grep2awk() {
         ere=""
         esc=off
         specialchars="\+|\||\{|\}|\(|\)"
+        alter_start=on
         for i in {1..$#bre}; do
-            if [[ ${bre[$i]} =~ $specialchars ]]; then
+            if [[ $bre[$i] == '^' && $alter_start == off ]]; then
+                ere+='\\^'
+            elif [[ $bre[$i] =~ $specialchars ]]; then
                 if [[ $esc == on ]]; then
+                    [[ $bre[$i] =~ "\^|\||\(" ]] \
+                        && alter_start=on \
+                        && right_now=on
                     ere+="$bre[$i]" # The escape sign is dropped now
                     esc=off
                 else
@@ -170,6 +176,8 @@ grep2awk() {
                 ere+="$bre[$i]"
                 esc=off
             fi
+            [[ $right_now != on ]] && alter_start=off
+            right_now=off
         done
         printf -- "%s" "$ere"
     }
