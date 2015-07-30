@@ -182,7 +182,7 @@ grep2awk() {
     # Some debugging/testing convenience functions:
 
     [[ -n $1 ]] && {
-        echo $($1 "$@")
+        echo $($1 "$2")
         return $?
     }
 
