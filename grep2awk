@@ -106,7 +106,7 @@ grep2awk() {
     }
 
     fixed2ere() {
-        local p specialchars ere
+        local p ere
         # We already receive a backslash escaped version of the
         # string by virtue of the ``(q)``-flag when this function is called.
         # That means that we need to transform the characters in the
@@ -116,11 +116,10 @@ grep2awk() {
         #     +  |  {  }  [  ]  (  )  *  .  ?  \  $  ^
         #    \+ \| \{ \} \[ \] \( \) \* \. \? \\ \$ \^
 
-        specialchars='\+|\||\{|\}|\[|\]|\(|\)|\*|\.|\?|\$|\^'
         str=$1
         ere=""
         for i in {1..$#str}; do
-            if [[ $str[$i] =~ $specialchars ]]; then
+            if [[ $str[$i] =~ '\+|\||\{|\}|\[|\]|\(|\)|\*|\.|\?|\$|\^' ]]; then
                 ere+="\\$str[$i]"
             elif [[ $str[$i] == $'\n' ]]; then
                 # This works after arrowing up into history, but not
@@ -146,38 +145,78 @@ grep2awk() {
         #
         # But only if the backslash is not escaped with a backslash.
 
-        local bre ere i re
+        debug() {
+            printf "bre[$i]=$bre[$i] s_esc=$s_esc " >>log
+            printf "s_brack=$s_brack s_brack_now=$s_brack_now " >>log
+            printf "s_altern=$s_altern s_alter_now=$s_altern_now\n" >>log
+        }
+
+        local bre ere i 
+        # Variables tracking states:
+        local s_brack s_brack_now s_esc s_altern s_altern_now s_char_cls
         bre=$1
         ere=""
-        esc=off
-        specialchars="\+|\||\{|\}|\(|\)"
-        alter_start=on
+        s_esc=off
+        s_altern=on
+        s_altern_now=off
+        s_brack=off
+        s_brack_now=off
+        s_char_cls=off
+        rm log 2>/dev/null
         for i in {1..$#bre}; do
-            if [[ $bre[$i] == '^' && $alter_start == off ]]; then
+            debug
+            # Deal first with bracket expressions.
+            if [[ $bre[$i] == '[' && $s_esc == off && $s_brack == off ]]; then
+                ere+="$bre[$i]"
+                s_brack=on
+                s_brack_now=on
+            # Character class accounting within bracket expressions, in order
+            # to keep track of the end of a bracket expression.
+            elif [[ $bre[$i] == '[' && $s_brack == on ]]; then
+                ere+="$bre[$i]"
+                s_char_cls=on
+            elif [[ $bre[$i] == ']' && $s_char_cls == on ]]; then
+                [[ $s_brack == on ]] || return 1
+                ere+="$bre[$i]"
+                s_char_cls=off
+            # Special casing the start of bracket expressions. 
+            # s_brack_now allows for inclusion of ] as a character as per POSIX.2.
+            elif [[ $s_brack == on && $s_brack_now == on ]]; then
+                ere+="$bre[$i]"
+                [[ $bre[$i] == '^' ]] \
+                    && s_brack_now=on \
+                    || s_brack_now=off
+            elif [[ $bre[$i] == ']' && $s_brack == on ]]; then
+                [[ $s_char_cls == off ]] || return 1
+                ere+="$bre[$i]"
+                s_brack=off
+            # The default bracket expansion action:
+            elif [[ $s_brack == on ]]; then
+                ere+="$bre[$i]"
+            # Then special casing with start of string/alternation:
+            elif [[ $bre[$i] == '^' && $s_altern == off ]]; then
                 ere+='\\^'
-            elif [[ $bre[$i] =~ $specialchars ]]; then
-                if [[ $esc == on ]]; then
-                    [[ $bre[$i] =~ "\^|\||\(" ]] \
-                        && alter_start=on \
-                        && right_now=on
-                    ere+="$bre[$i]" # The escape sign is dropped now
-                    esc=off
-                else
-                    ere+="\\\\$bre[$i]"
-                fi
-            elif [[ $bre[$i] == "\\" ]]; then
-                if [[ $esc == on ]]; then
-                    ere+="\\\\\\\\"
-                    esc=off
-                else
-                    esc=on
-                fi
+            elif [[ $bre[$i] =~ "\+|\{|\}|\)" && $s_esc == on ]]; then
+                ere+="$bre[$i]" # The escape sign is dropped now
+                s_esc=off
+            elif [[ $bre[$i] =~ "\^|\||\(" && $s_esc == on ]]; then
+                s_altern=on
+                s_altern_now=on
+                ere+="$bre[$i]" # The escape sign is dropped now
+                s_esc=off
+            elif [[ $bre[$i] =~ "\+|\||\{|\}|\(|\)" && $s_esc == off ]]; then
+                ere+="\\\\$bre[$i]"
+            elif [[ $bre[$i] == "\\" && $s_esc == on ]]; then
+                ere+="\\\\\\\\"
+                s_esc=off
+            elif [[ $bre[$i] == "\\" && $s_esc == off ]]; then
+                s_esc=on
             else
                 ere+="$bre[$i]"
-                esc=off
+                s_esc=off
             fi
-            [[ $right_now != on ]] && alter_start=off
-            right_now=off
+            [[ $s_altern_now != on ]] && s_altern=off
+            s_altern_now=off
         done
         printf -- "%s" "$ere"
     }

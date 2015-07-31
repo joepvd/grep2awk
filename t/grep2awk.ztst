@@ -56,6 +56,10 @@
 0:bre2ere: Caret special casing
 >^a\^b(^c\^d|^e\^f)\^g\^h
 
+  grep2awk bre2ere 'a[]+]+[^[:alnum:]]b+[a-z^+[:punct:]]'
+0:bre2ere:Bracket expression with character classes
+>a[]+]\+[^[:alnum:]]b\+[a-z^+[:punct:]]
+
   grep2awk fixed2ere 'a*b[c}d?e.f$g^h\i]'
 0:fixed2ere
 >a\*b\[c\}d\?e\.f\$g\^h\\i\]
