@@ -11,9 +11,6 @@
 #
 # This makes the widget available under <CTRL-X><CTRL-A>.
 #
-# Known bugs:
-# - The command conversions have not been thorougly tested
-#
 # The files t/comptest and t/ztst.zsh are taken (and modified) from the
 # zsh project. This project can be used under the same terms as the zsh
 # project.
@@ -28,9 +25,12 @@ autoload -Uz split-shell-arguments
 grep2awk() {
     # Needs to be in its own scope, to not have the variables leak to
     # the main shell process.
-    local replacement_line REPLY REPLY2 flag cursor grepopts
+    local replacement_line REPLY REPLY2 flag cursor grepopts debug
     local -a reply
     typeset -A opt
+    #zstyle -t ":grep2awk:*" debug && debug=yes
+    #echo debug=$debug
+    #echo nice
 
     # Define some functions first:
     #   regex2awkprog
@@ -147,29 +147,30 @@ grep2awk() {
 
         debug() {
             printf "bre[$i]=$bre[$i] s_esc=$s_esc " >>log
-            printf "s_brack=$s_brack s_brack_now=$s_brack_now " >>log
-            printf "s_altern=$s_altern s_alter_now=$s_altern_now\n" >>log
+            printf "s_brack=$s_brack s_brack_start=$s_brack_start " >>log
+            printf "s_altern=$s_altern s_alter_now=$s_altern_start\n" >>log
         }
 
         local bre ere i 
         # Variables tracking states:
-        local s_brack s_brack_now s_esc s_altern s_altern_now s_char_cls
+        local s_brack s_brack_start s_esc s_altern s_altern_start s_char_cls
         bre=$1
         ere=""
         s_esc=off
         s_altern=on
-        s_altern_now=off
+        s_altern_start=off
         s_brack=off
-        s_brack_now=off
+        s_brack_start=off
         s_char_cls=off
         rm log 2>/dev/null
         for i in {1..$#bre}; do
             debug
-            # Deal first with bracket expressions.
+            # Bracket expressions
+            # -------------------
             if [[ $bre[$i] == '[' && $s_esc == off && $s_brack == off ]]; then
                 ere+="$bre[$i]"
                 s_brack=on
-                s_brack_now=on
+                s_brack_start=on
             # Character class accounting within bracket expressions, in order
             # to keep track of the end of a bracket expression.
             elif [[ $bre[$i] == '[' && $s_brack == on ]]; then
@@ -180,34 +181,63 @@ grep2awk() {
                 ere+="$bre[$i]"
                 s_char_cls=off
             # Special casing the start of bracket expressions. 
-            # s_brack_now allows for inclusion of ] as a character as per POSIX.2.
-            elif [[ $s_brack == on && $s_brack_now == on ]]; then
+            # s_brack_start allows for inclusion of ] as a character as per POSIX.2.
+            elif [[ $s_brack == on && $s_brack_start == on ]]; then
                 ere+="$bre[$i]"
                 [[ $bre[$i] == '^' ]] \
-                    && s_brack_now=on \
-                    || s_brack_now=off
+                    && s_brack_start=on \
+                    || s_brack_start=off
             elif [[ $bre[$i] == ']' && $s_brack == on ]]; then
                 [[ $s_char_cls == off ]] || return 1
                 ere+="$bre[$i]"
                 s_brack=off
-            # The default bracket expansion action:
+            # Finally, the default bracket expansion action:
             elif [[ $s_brack == on ]]; then
                 ere+="$bre[$i]"
-            # Then special casing with start of string/alternation:
-            elif [[ $bre[$i] == '^' && $s_altern == off ]]; then
+
+            # Alternation and subexpressions
+            # ------------------------------
+            # Needed for special casing of *, ^ and $.
+            elif [[ $bre[$i] == '^' && $s_altern == off && $s_esc == off ]]; then
+                # When ^ is not at the start of an aternation, escape it:
                 ere+='\\^'
-            elif [[ $bre[$i] =~ "\+|\{|\}|\)" && $s_esc == on ]]; then
-                ere+="$bre[$i]" # The escape sign is dropped now
-                s_esc=off
-            elif [[ $bre[$i] =~ "\^|\||\(" && $s_esc == on ]]; then
+            elif [[ $bre[$i] == '^' && $s_altern == off && $s_esc == on ]]; then
+                # When ^ is not at the start of an aternation, escape it:
+                ere+='^'
+            elif [[ $bre[$i] == "*" && $s_altern == on ]]; then
+                # When * is at the start of an alternation/subexpression, escape it:
+                ere+='\\*'
+            elif [[ $bre[$i] == '$' ]]; then
+                # Dollar is a special character when it is at the end of string, 
+                # end of alternation, or end of subexpression. Otherwise: it is not 
+                # special.  As we do not need to know the 'history' of the regex, we
+                # can use a lookahead to find out with which thing we are dealing.
+                #
+                # The behavior of $ is not documented in man 1 grep; it is, 
+                # however, in `man 7 regex`. Some tests indicate that GNU grep
+                # adheres to the POSIX.2 specification.
+                if [[ $#bre -eq $i ]]; then
+                    [[ $s_esc == off ]] && ere+='$' || ere+='\\$'
+                elif [[ $i+2 -le $#bre && $bre[$i+1,$i+2] =~ '\\(\||\))' ]]; then
+                    [[ $s_esc == off ]] && ere+='$' || ere+='\\$'
+                else
+                    [[ $s_esc == off ]] && ere+='\\$' || ere+='$'
+                fi
+            elif [[ $bre[$i] =~ '\||\(' && $s_esc == on ]]; then
                 s_altern=on
-                s_altern_now=on
+                s_altern_start=on
                 ere+="$bre[$i]" # The escape sign is dropped now
                 s_esc=off
-            elif [[ $bre[$i] =~ "\+|\||\{|\}|\(|\)" && $s_esc == off ]]; then
+
+            # Normal BRE to ERE:
+            # ------------------
+            elif [[ $bre[$i] =~ '\+|\{|\}|\)' && $s_esc == on ]]; then
+                ere+="$bre[$i]" # The escape sign is dropped now
+                s_esc=off
+            elif [[ $bre[$i] =~ '\+|\||\{|\}|\(|\)' && $s_esc == off ]]; then
                 ere+="\\\\$bre[$i]"
-            elif [[ $bre[$i] == "\\" && $s_esc == on ]]; then
-                ere+="\\\\\\\\"
+            elif [[ $bre[$i] == '\\' && $s_esc == on ]]; then
+                ere+='\\\\\\\\'
                 s_esc=off
             elif [[ $bre[$i] == "\\" && $s_esc == off ]]; then
                 s_esc=on
@@ -215,8 +245,8 @@ grep2awk() {
                 ere+="$bre[$i]"
                 s_esc=off
             fi
-            [[ $s_altern_now != on ]] && s_altern=off
-            s_altern_now=off
+            [[ $s_altern == on && $s_altern_start == off && $bre[$i] != "^" ]] && s_altern=off
+            s_altern_start=off
         done
         printf -- "%s" "$ere"
     }
@@ -250,40 +280,38 @@ grep2awk() {
             # Uneven "words" are whitespace. Only interested in changing the
             # cursor position if exchanging the regex is not replaced by the awk
             # program yet (flag < 3).
-            len=$#reply[$i]
-            (( cursor += len ))
-        elif [[ $flag == 0 ]]; then
+            (( cursor += $#reply[$i] ))
+        elif (( flag == 0 )); then
             case $reply[$i] in
                 (grep)
                     swap_command
-                    ;|
+                    ;;
                 (egrep)
                     swap_command
                     typeset "opt[E]"=1
-                    ;|
+                    ;;
                 (fgrep)
                     swap_command
                     typeset "opt[F]"=1
-                    ;|
-                (*)
-                    (( cursor += $#reply[$i] ))
+                    ;;
             esac
-        elif [[ $flag == 1 && $reply[$i] = -* ]]; then
+            (( cursor += $#reply[$i] ))
+        elif [[ $flag == 1 && $reply[$i] == -* ]]; then
             # Is it an option to grep? A regular expression of
             # the options that are recognized:
-            grepopts="c|E|F|G|H|i|l|L|n|v|w|x|y"
+            grepopts="c|E|e|F|G|H|i|l|L|n|v|w|x|y"
             # Is it the End of Options-marker?
             if [[ $reply[$i] == "--" ]]; then
                 flag=2
+            elif [[ $reply[$i] =~ ^--. ]]; then
+                zle -M "grep2awk: Long options to grep are not supported"
+                return 1
             else
                 for ((l=1; l<$#reply[$i]; l++)); do
                     #check those options!
                     o=${reply[$i]:$l:1}
                     if [[ $o =~ $grepopts ]]; then
                         typeset "opt[$o]"=1
-                    elif [[ $o == "-" ]]; then
-                        zle -M "grep2awk: Long options to grep are not supported"
-                        return 1
                     else
                         zle -M "grep2awk: Option $o is not supported"
                         return 1
@@ -310,7 +338,7 @@ grep2awk() {
 
     # Now we are done. Apply the changes to the BUFFER:
     BUFFER="$replacement_line"
-    CURSOR=cursor
+    CURSOR=$cursor
 }
 
 grep2awk "$@"

@@ -24,17 +24,17 @@
 
 # Start with unit testing the re transform functions.
 
-  grep2awk bre2ere 'a|b'
+  grep2awk bre2ere 'a|b\|c'
 0:bre2ere: Pipe
->a\|b
+>a\|b|c
 
-  grep2awk bre2ere 'a+b'
+  grep2awk bre2ere 'a+b\+c'
 0:bre2ere: Plus
->a\+b
+>a\+b+c
 
-  grep2awk bre2ere 'a(b|c)'
+  grep2awk bre2ere 'a(b|c\(d\|(e|f)\)g)'
 0:bre2ere: Alternation
->a\(b\|c\)
+>a\(b\|c(d|\(e\|f\))g\)
 
   grep2awk bre2ere 'a+b[0-9]\+'
 0:bre2ere: Some stuff
@@ -55,6 +55,14 @@
   grep2awk bre2ere '^a^b\(^c^d\|^e^f\)^g^h'
 0:bre2ere: Caret special casing
 >^a\^b(^c\^d|^e\^f)\^g\^h
+
+  grep2awk bre2ere '^*a^b\(^*c^d\|^e^f\)^g\|*^h*\|i\*'
+0:bre2ere: Carets, stars, and alternation.
+>^\*a\^b(^\*c\^d|^e\^f)\^g|\*\^h*|i*
+
+  grep2awk bre2ere 'a$b\|c$\|d$\($\|e$\)\|f$'
+0:bre2ere:Dollar versus end of string
+>a\$b|c$|d\$($|e$)|f$
 
   grep2awk bre2ere 'a[]+]+[^[:alnum:]]b+[a-z^+[:punct:]]'
 0:bre2ere:Bracket expression with character classes
