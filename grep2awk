@@ -25,7 +25,7 @@ autoload -Uz split-shell-arguments
 grep2awk() {
     # Needs to be in its own scope, to not have the variables leak to
     # the main shell process.
-    local replacement_line REPLY REPLY2 flag cursor grepopts debug
+    local replacement_line REPLY REPLY2 flag cursor debug
     local -a reply
     typeset -A opt
     #zstyle -t ":grep2awk:*" debug && debug=yes
@@ -89,7 +89,7 @@ grep2awk() {
         }
 
         (( opt[c] > 0 )) && {
-            # This is incompatible with `grep -c`, as files where the count == 0
+            # This is incompatible with `grep -c`, as files where the count is 0
             # are not displayed.  This is saner behavior, IMHO.
             prelude+='BEGINFILE{c=0};ENDFILE{if(c>0)print FILENAME":"c}; '
             action='{c++}'
@@ -211,7 +211,6 @@ grep2awk() {
                 # When * is at the start of an alternation/subexpression,
                 # escape it:
                 ere+='\\*'
-
             elif [[ $bre[$i] == '$' ]]; then
                 # Dollar is a special character when it is at the end of
                 # string, end of alternation, or end of subexpression.
@@ -244,9 +243,9 @@ grep2awk() {
                 ere+="$bre[$i]"
                 s_esc=off
             fi
-            [[      $s_altern == on \
-                &&  $s_altern_start == off \
-                &&  $bre[$i] != "^" \
+            [[ $s_altern == on        \
+            && $s_altern_start == off \
+            && $bre[$i] != "^"        \
             ]] && s_altern=off
             s_altern_start=off
         done
@@ -299,9 +298,6 @@ grep2awk() {
             esac
             (( cursor += $#reply[$i] ))
         elif [[ $flag == 1 && $reply[$i] == -* ]]; then
-            # Is it an option to grep? A regular expression of
-            # the options that are recognized:
-            grepopts="c|E|e|F|G|H|i|l|L|n|v|w|x|y"
             # Is it the End of Options-marker?
             if [[ $reply[$i] == "--" ]]; then
                 flag=2
@@ -311,8 +307,10 @@ grep2awk() {
             else
                 for ((l=1; l<$#reply[$i]; l++)); do
                     #check those options!
+                    # Is it an option to grep? A regular expression of
+                    # the options that are recognized:
                     o=${reply[$i]:$l:1}
-                    if [[ $o =~ $grepopts ]]; then
+                    if [[ $o =~ "c|E|e|F|G|H|i|l|L|n|v|w|x|y" ]]; then
                         typeset "opt[$o]"=1
                     else
                         zle -M "grep2awk: Option $o is not supported"
