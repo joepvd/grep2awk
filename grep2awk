@@ -181,7 +181,8 @@ grep2awk() {
                 ere+="$bre[$i]"
                 s_char_cls=off
             # Special casing the start of bracket expressions. 
-            # s_brack_start allows for inclusion of ] as a character as per POSIX.2.
+            # s_brack_start allows for inclusion of ] as a character as per
+            # POSIX.2.
             elif [[ $s_brack == on && $s_brack_start == on ]]; then
                 ere+="$bre[$i]"
                 [[ $bre[$i] == '^' ]] \
@@ -198,43 +199,41 @@ grep2awk() {
             # Alternation and subexpressions
             # ------------------------------
             # Needed for special casing of *, ^ and $.
-            elif [[ $bre[$i] == '^' && $s_altern == off && $s_esc == off ]]; then
-                # When ^ is not at the start of an aternation, escape it:
-                ere+='\\^'
-            elif [[ $bre[$i] == '^' && $s_altern == off && $s_esc == on ]]; then
-                # When ^ is not at the start of an aternation, escape it:
-                ere+='^'
-            elif [[ $bre[$i] == "*" && $s_altern == on ]]; then
-                # When * is at the start of an alternation/subexpression, escape it:
-                ere+='\\*'
-            elif [[ $bre[$i] == '$' ]]; then
-                # Dollar is a special character when it is at the end of string, 
-                # end of alternation, or end of subexpression. Otherwise: it is not 
-                # special.  As we do not need to know the 'history' of the regex, we
-                # can use a lookahead to find out with which thing we are dealing.
-                #
-                # The behavior of $ is not documented in man 1 grep; it is, 
-                # however, in `man 7 regex`. Some tests indicate that GNU grep
-                # adheres to the POSIX.2 specification.
-                if [[ $#bre -eq $i ]]; then
-                    [[ $s_esc == off ]] && ere+='$' || ere+='\\$'
-                elif [[ $i+2 -le $#bre && $bre[$i+1,$i+2] =~ '\\(\||\))' ]]; then
-                    [[ $s_esc == off ]] && ere+='$' || ere+='\\$'
-                else
-                    [[ $s_esc == off ]] && ere+='\\$' || ere+='$'
-                fi
             elif [[ $bre[$i] =~ '\||\(' && $s_esc == on ]]; then
                 s_altern=on
                 s_altern_start=on
                 ere+="$bre[$i]" # The escape sign is dropped now
                 s_esc=off
+            elif [[ $bre[$i] == '^' && $s_altern == on ]]; then
+                [[ $s_esc == off ]] || return 1
+                ere+='^'
+            elif [[ $bre[$i] == "*" && $s_altern == on ]]; then
+                # When * is at the start of an alternation/subexpression,
+                # escape it:
+                ere+='\\*'
+
+            elif [[ $bre[$i] == '$' ]]; then
+                # Dollar is a special character when it is at the end of
+                # string, end of alternation, or end of subexpression.
+                # Otherwise: it is not special.  As we do not need to know the
+                # 'history' of the regex, we can use a lookahead to find out
+                # with which thing we are dealing.
+                #
+                # The behavior of $ is not documented in man 1 grep; it is, 
+                # however, in `man 7 regex`. Some tests indicate that GNU grep
+                # adheres to the POSIX.2 specification.
+                if [[ $#bre -eq $i || ${bre:$i:2} =~ '\\(\||\))' ]]; then
+                    [[ $s_esc == off ]] && ere+='$' || ere+='\\$'
+                else
+                    [[ $s_esc == off ]] && ere+='\\$' || ere+='$'
+                fi
 
             # Normal BRE to ERE:
             # ------------------
-            elif [[ $bre[$i] =~ '\+|\{|\}|\)' && $s_esc == on ]]; then
+            elif [[ $bre[$i] =~ '\+|\{|\}|\)|\^' && $s_esc == on ]]; then
                 ere+="$bre[$i]" # The escape sign is dropped now
                 s_esc=off
-            elif [[ $bre[$i] =~ '\+|\||\{|\}|\(|\)' && $s_esc == off ]]; then
+            elif [[ $bre[$i] =~ '\+|\||\{|\}|\(|\)|\^' && $s_esc == off ]]; then
                 ere+="\\\\$bre[$i]"
             elif [[ $bre[$i] == '\\' && $s_esc == on ]]; then
                 ere+='\\\\\\\\'
@@ -245,7 +244,10 @@ grep2awk() {
                 ere+="$bre[$i]"
                 s_esc=off
             fi
-            [[ $s_altern == on && $s_altern_start == off && $bre[$i] != "^" ]] && s_altern=off
+            [[      $s_altern == on \
+                &&  $s_altern_start == off \
+                &&  $bre[$i] != "^" \
+            ]] && s_altern=off
             s_altern_start=off
         done
         printf -- "%s" "$ere"
