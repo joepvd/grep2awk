@@ -15,7 +15,7 @@ Clone the repository someplace:
 
 .. code:: sh
 
-   git clone 'https://github.com/joepvd/grep2awk.git'
+   git clone git@github.com:joepvd/grep2awk.git
 
 Then put the file ``grep2awk`` somewhere in your ``$fpath``.  Make sure the file gets ``autoload``-ed, making the script known as a line editor (``zle``) script, and assigning a key binding to it: 
 
@@ -77,10 +77,4 @@ If you ``source`` the file ``init.zsh``, the development version of ``grep2awk``
 
 There is a testing library in the ``t``-directory, in which the testing framework from the `ZSH`-project has been adjusted to work with the currently installed shell.  Please run and update the tests when playing with the code. 
 
-
-Bugs
-----
-
-How to deal with customized ``grep`` commands? Alias with options? Suffix alias with options? As a function? The (depreciated) ``GREP_OPTIONS`` environment variable? Can the proper thing to do be detected, or is a ``zstyle``-mechanism warranted? 
-
-Please let me know whether you like it, and what could be better to support your needs! 
+Please let me know if you like it, and what could be better to support your needs! 
