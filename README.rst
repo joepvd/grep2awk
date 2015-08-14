@@ -27,6 +27,33 @@ Then put the file ``grep2awk`` somewhere in your ``$fpath``.  Make sure the file
 
 Now, pressing ``<CTRL-X>``-``<CTRL-A>`` will bring you goodies! 
 
+This zle function can be configured as follows:
+
+.. code:: sh
+
+   zstyle ':grep2awk:' awk 'gawk --'
+
+This sets the command that will be executed. The default is ``awk --``, and if you desire to use another awk program, you can do so.
+
+.. code:: sh
+
+   zstyle ':grep2awk:*:' debug /path/to/file
+
+If ``debug`` has a value, some information is dumped in the file specified.  If it does not start with a ``/``, the working directory of the current zsh shell is used.  Currently, only the context ``bre2ere`` is supported.
+
+.. code:: sh
+
+   zstyle ':grep2awk:commands:' commands g gr
+
+If you have functions, aliases, other binaries, you can list them here.  Now, the commands ``g`` and ``gr`` are recognized.
+
+.. code:: sh
+
+   zstyle ':grep2awk:g:options:' options Gh
+
+Now, for the ``g`` alias, it is known that the options are set to ``-G`` and ``-h``.
+
+If you alias ``egrep``, be sure to include ``E`` in the options list.
 
 The following grep options are supported: 
 -----------------------------------------
@@ -67,16 +94,6 @@ There is a testing library in the ``t``-directory, in which the testing framewor
 
 Bugs
 ----
-
-There are some bugs. In no particular order:
-
-The treatment of backslashes in the conversion from Fixed String to Extended Regular Expression is not working completely. 
-
-bre2ere does not take character classes and their distinct escaping rules into account.
-
-The testing library chokes on some bre2ere functions. That might, however, by an artifact of ``$'...'``, ``zpty`` on my environment, or the testing infrastructure.
-
-Furthermore, the context options (``-A``, ``-B``, ``-C``) are not implemented, as well as ``-o`` (only-matching).  Also colorized matches are not supported. Whether these are considered bugs is unclear. 
 
 How to deal with customized ``grep`` commands? Alias with options? Suffix alias with options? As a function? The (depreciated) ``GREP_OPTIONS`` environment variable? Can the proper thing to do be detected, or is a ``zstyle``-mechanism warranted? 
 

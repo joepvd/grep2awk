@@ -25,21 +25,18 @@ autoload -Uz split-shell-arguments
 grep2awk() {
     # Needs to be in its own scope, to not have the variables leak to
     # the main shell process.
-    local replacement_line REPLY REPLY2 flag cursor debug
+    local replacement_line REPLY REPLY2 flag cursor
     local -a reply
     typeset -A opt
-    #zstyle -t ":grep2awk:*" debug && debug=yes
-    #echo debug=$debug
-    #echo nice
 
     # Define some functions first:
-    #   regex2awkprog
-    #   fixed2ere
-    #   bre2ere
-    #   swapcommand
+    #  - regex2awkprog
+    #  - fixed2ere
+    #  - bre2ere
+    #  - swapcommand
 
     regex2awkprog() {
-        local re prelude action prog
+        local re prelude action prog awk
 
         re=${(Q)1} # Remove one level of quoting, so we have what
                    # grep would receive.
@@ -65,6 +62,10 @@ grep2awk() {
         (( opt[x] > 0 )) && {
             re="^($re)$"
         }
+        # Replace any forward slash with an escaped one:
+
+        re=${re//\//\\/}
+
         # Wrap in slashes, and replace any single quote with its
         # ASCII code:
         re=/${re//\'/\\47}/
@@ -145,13 +146,8 @@ grep2awk() {
         #
         # But only if the backslash is not escaped with a backslash.
 
-        debug() {
-            printf "bre[$i]=$bre[$i] s_esc=$s_esc " >>log
-            printf "s_brack=$s_brack s_brack_start=$s_brack_start " >>log
-            printf "s_altern=$s_altern s_alter_now=$s_altern_start\n" >>log
-        }
 
-        local bre ere i 
+        local bre ere i debug
         # Variables tracking states:
         local s_brack s_brack_start s_esc s_altern s_altern_start s_char_cls
         bre=$1
@@ -162,9 +158,17 @@ grep2awk() {
         s_brack=off
         s_brack_start=off
         s_char_cls=off
-        rm log 2>/dev/null
+        zstyle -s ':grep2awk:bre2ere:' debug debug
+        if [[ -n $debug ]]; then
+            rm "$debug" 2>/dev/null
+            debug() {
+                printf "bre[$i]=$bre[$i] s_esc=$s_esc "                   >> "$debug"
+                printf "s_brack=$s_brack s_brack_start=$s_brack_start "   >> "$debug"
+                printf "s_altern=$s_altern s_alter_now=$s_altern_start\n" >> "$debug"
+            }
+        fi
         for i in {1..$#bre}; do
-            debug
+            [[ -n $debug ]] && debug
             # Bracket expressions
             # -------------------
             if [[ $bre[$i] == '[' && $s_esc == off && $s_brack == off ]]; then
@@ -252,17 +256,22 @@ grep2awk() {
         printf -- "%s" "$ere"
     }
 
-    swap_command() {
-        flag=1
-        reply[$i]="awk --"
-    }
-
-    # Some debugging/testing convenience functions:
+    # Some debugging/testing convenience functions.
+    # If grep2awk is autoloaded, the regex replacement
+    # functions can be called directly: 
+    #
+    #   grep2awk bre2ere 'a[^a-z]\(c$\|d\)'
+    # 
+    # See the test suite for some examples.
 
     [[ -n $1 ]] && {
         echo $($1 "$2")
         return $?
     }
+
+    zstyle -s ':grep2awk:' awk awk
+    : ${awk:=awk --}
+
 
     # Store line as $reply[@]:
     split-shell-arguments
@@ -285,14 +294,17 @@ grep2awk() {
         elif (( flag == 0 )); then
             case $reply[$i] in
                 (grep)
-                    swap_command
+                    flag=1
+                    reply[$i]="$awk"
                     ;;
                 (egrep)
-                    swap_command
+                    flag=1
+                    reply[$i]="$awk"
                     typeset "opt[E]"=1
                     ;;
                 (fgrep)
-                    swap_command
+                    flag=1
+                    reply[$i]="$awk"
                     typeset "opt[F]"=1
                     ;;
             esac
