@@ -41,20 +41,6 @@ This sets the command that will be executed. The default is ``awk --``, and if y
 
 If ``debug`` has a value, some information is dumped in the file specified.  If it does not start with a ``/``, the working directory of the current zsh shell is used.  Currently, only the context ``bre2ere`` is supported.
 
-.. code:: sh
-
-   zstyle ':grep2awk:commands:' commands g gr
-
-If you have functions, aliases, other binaries, you can list them here.  Now, the commands ``g`` and ``gr`` are recognized.
-
-.. code:: sh
-
-   zstyle ':grep2awk:g:options:' options Gh
-
-Now, for the ``g`` alias, it is known that the options are set to ``-G`` and ``-h``.
-
-If you alias ``egrep``, be sure to include ``E`` in the options list.
-
 The following grep options are supported: 
 -----------------------------------------
 
