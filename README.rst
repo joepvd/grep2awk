@@ -1,18 +1,6 @@
 grep2awk: A small zsh/zle helper
 ================================
 
-.. code:: sh
-
-    % autoload -Uz grep2awk
-    % zle -N grep2awk
-    % bindkey "^X^A" grep2awk
-    
-    % grep '^a^b\(c(\|d)e\)' file
-    % awk -- '/^a\^b(c\(|d\)e)/ {print $0}' file <CTRL-X><CTRL-A>
-
-    % grep -vi 'where is it not hiding' file <CTRLX><CTRL-A>
-    % awk -- 'BEGIN{IGNORECASE=1}; !/where is it not hiding/ {print $0}' file
-
 While trying to find the needle in a haystack, you find yourself recklessly grepping some log files.  Suddenly, it occurs to you that there might be a pattern in the data, and ``awk`` will be the fastest way to figure out if this pattern has any relevance or not.  You want to change your ``grep`` into an ``awk`` oneliner. 
 
 This involves some mechanical work: Arrow up to get to the command line, move to the word ``grep`` and change it, forward to the start of the regular expression and add ``'/``. Move to the end of the regular expression, and type: ``/ {}'``.  Not a big deal, but mechanical work, which does add up if you're doing this eight times a day. 
