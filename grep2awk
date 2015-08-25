@@ -45,12 +45,6 @@ grep2awk() {
             re="$(fixed2ere $re)"
         }
 
-        # A sanity check:
-        (( opt[E] + opt[F] + opt[G] + opt[P] > 1 )) && {
-            zle -M "grep2awk:Options E, F, G and P are mutually exclusive."
-            zle -M "Exiting."
-            return 1
-        }
         (( opt[G] == 1 || opt[E] + opt[F] + opt[P] == 0 )) && {
             # It is Basic Regular Expression
             re="$(bre2ere $re)"
@@ -82,12 +76,6 @@ grep2awk() {
         # are enabled.
         action="{print ${opt[H]:+FILENAME\":\"}${opt[n]:+NR\":\"}\$0}"
 
-        # c, H, l and L are mutually exclusive. One of them will win.
-        (( opt[H] + opt[l] + opt[L] + opt[c] > 1 )) && {
-            zle -M "grep2awk:Options c, H, l and L are mutually exclusive."
-            zle -M "Exiting."
-            return 1
-        }
 
         (( opt[c] > 0 )) && {
             # This is incompatible with `grep -c`, as files where the count is 0
@@ -347,6 +335,18 @@ grep2awk() {
         elif (( flag==1 || flag==2 )); then
             # The fall-through for opt_or_reg OR regex:
             # This is the regex.
+            # A sanity check:
+            (( opt[E] + opt[F] + opt[G] + opt[P] > 1 )) && {
+                zle -M "grep2awk:Options E, F, G and P are mutually exclusive."
+                zle -M "Exiting."
+                return 1
+            }
+            # c, H, l and L are mutually exclusive. One of them will win.
+            (( opt[H] + opt[l] + opt[L] + opt[c] > 1 )) && {
+                zle -M "grep2awk:Options c, H, l and L are mutually exclusive."
+                zle -M "Exiting."
+                return 1
+            }
             reply[$i]=$(regex2awkprog $reply[$i])
             (( cursor += $#reply[$i] - 2 ))
             flag=3
