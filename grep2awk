@@ -33,10 +33,13 @@ grep2awk() {
     #  - regex2awkprog
     #  - fixed2ere
     #  - bre2ere
+    #  - ere2ere
     #  - swapcommand
 
     regex2awkprog() {
         local re prelude action prog awk
+
+        #zle -M "${(kv)opt}"
 
         re=${(Q)1} # Remove one level of quoting, so we have what
                    # grep would receive.
@@ -45,9 +48,20 @@ grep2awk() {
             re="$(fixed2ere $re)"
         }
 
+        # A sanity check:
+        (( opt[E] + opt[F] + opt[G] + opt[P] > 1 )) && {
+            zle -M "grep2awk:Options E, F, G and P are mutually exclusive."
+            zle -M "Exiting."
+            return 1
+        }
         (( opt[G] == 1 || opt[E] + opt[F] + opt[P] == 0 )) && {
             # It is Basic Regular Expression
             re="$(bre2ere $re)"
+        }
+
+        (( opt[E] > 1 )) && {
+            #zle -M "ERE"
+            re="$(ere2ere $re)"
         }
 
         (( opt[w] > 0 )) && {
@@ -76,6 +90,12 @@ grep2awk() {
         # are enabled.
         action="{print ${opt[H]:+FILENAME\":\"}${opt[n]:+NR\":\"}\$0}"
 
+        # c, H, l and L are mutually exclusive. One of them will win.
+        (( opt[H] + opt[l] + opt[L] + opt[c] > 1 )) && {
+            zle -M "grep2awk:Options c, H, l and L are mutually exclusive."
+            zle -M "Exiting."
+            return 1
+        }
 
         (( opt[c] > 0 )) && {
             # This is incompatible with `grep -c`, as files where the count is 0
@@ -251,6 +271,39 @@ grep2awk() {
         printf -- "%s" "$ere"
     }
 
+    ere2ere() {
+        # The only difference where grep EREs differ from gawk EREs, is
+        # the treatment of "\`" and "\'".  There are some other differences
+        # (treatment of "'", and of "/") but those need to be dealt with
+        # irrespective of which input RE type has been chosen.
+        local grepere ere s_esc
+        s_esc=off
+        grepere=$1
+        ere=""
+        rm log 2>/dev/null
+        for i in {1..$#grepere}; do
+            echo "grepere[$i] = $grepere[$i]">>log
+            if [[ $s_esc == off && $grepere[$i] == '\\' ]]; then
+                echo switching escape on>>log
+                echo 
+                s_esc=on
+            elif [[ $s_esc == on && $grepere[$i] == '`' ]]; then
+                ere+='^'
+                s_esc=off
+            elif [[ $s_esc == on && $grepere[$i] == "'" ]]; then
+                ere+='$'
+                s_esc=off
+            elif [[ $s_esc == on ]]; then
+                ere+="\\\\$grepere[$i]"
+                s_esc=off
+            else
+                echo normal character>>log
+                ere+="$grepere[$i]"
+            fi
+        done
+        printf -- "%s" "$ere"
+    }
+
     # Some debugging/testing convenience functions.
     # If grep2awk is autoloaded, the regex replacement
     # functions can be called directly: 
@@ -335,18 +388,6 @@ grep2awk() {
         elif (( flag==1 || flag==2 )); then
             # The fall-through for opt_or_reg OR regex:
             # This is the regex.
-            # A sanity check:
-            (( opt[E] + opt[F] + opt[G] + opt[P] > 1 )) && {
-                zle -M "grep2awk:Options E, F, G and P are mutually exclusive."
-                zle -M "Exiting."
-                return 1
-            }
-            # c, H, l and L are mutually exclusive. One of them will win.
-            (( opt[H] + opt[l] + opt[L] + opt[c] > 1 )) && {
-                zle -M "grep2awk:Options c, H, l and L are mutually exclusive."
-                zle -M "Exiting."
-                return 1
-            }
             reply[$i]=$(regex2awkprog $reply[$i])
             (( cursor += $#reply[$i] - 2 ))
             flag=3
