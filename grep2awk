@@ -68,7 +68,7 @@ grep2awk() {
 
         # Wrap in slashes, and replace any single quote with its
         # ASCII code:
-        re=/${re//\'/\\47}/
+        re=/${re//\'/\\\\047}/
 
         # Negate the pattern if told so:
         (( opt[v] > 0 )) && {
