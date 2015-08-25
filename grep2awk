@@ -59,8 +59,7 @@ grep2awk() {
             re="$(bre2ere $re)"
         }
 
-        (( opt[E] > 1 )) && {
-            #zle -M "ERE"
+        (( opt[E] > 0 )) && {
             re="$(ere2ere $re)"
         }
 
@@ -280,12 +279,8 @@ grep2awk() {
         s_esc=off
         grepere=$1
         ere=""
-        rm log 2>/dev/null
         for i in {1..$#grepere}; do
-            echo "grepere[$i] = $grepere[$i]">>log
             if [[ $s_esc == off && $grepere[$i] == '\\' ]]; then
-                echo switching escape on>>log
-                echo 
                 s_esc=on
             elif [[ $s_esc == on && $grepere[$i] == '`' ]]; then
                 ere+='^'
@@ -297,7 +292,6 @@ grep2awk() {
                 ere+="\\\\$grepere[$i]"
                 s_esc=off
             else
-                echo normal character>>log
                 ere+="$grepere[$i]"
             fi
         done
