@@ -237,6 +237,12 @@ grep2awk() {
                 # `(` and `|` are handled in the alternation part.
                 ere+="$bre[$i]" # The escape sign is dropped now
                 s_esc=off
+            elif [[ $bre[$i] == "'" && $s_esc == on ]]; then
+                ere+='$'
+                s_esc=off
+            elif [[ $bre[$i] == '`' && $s_esc == on ]]; then
+                ere+='^'
+                s_esc=off
             elif [[ $bre[$i] =~ '\+|\||\{|\}|\(|\)|\^|\?' && $s_esc == off ]]; then
                 ere+="\\\\$bre[$i]"
             elif [[ $bre[$i] == '\\' && $s_esc == on ]]; then
