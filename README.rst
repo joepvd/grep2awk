@@ -40,16 +40,24 @@ Some options to grep will be translated to appropriate awk statements:
 
 
 
-How to use:
------------
 
-Clone the repository someplace:
+Installation:
+-------------
+
+If you are using some zsh configuration framework or plugin manager, jump ahead.  If you are rolling your own zsh configuration, here is the deal.  Clone the repository someplace:
 
 .. code:: sh
 
+   cd someplace
    git clone git@github.com:joepvd/grep2awk.git
 
-Then put the file ``grep2awk`` somewhere in your ``$fpath``.  Make sure the file gets ``autoload``-ed, making the script known as a line editor (``zle``) script, and assigning a key binding to it: 
+Then, in ``~/.zshrc``, append ``someplace`` to ``$fpath``:
+
+.. code:: sh
+
+   fpath+=(someplace)
+
+Make sure ``grep2awk`` gets ``autoload``-ed, making the script known as a line editor (``zle``) script, and assigning a key binding to it: 
 
 .. code:: sh
 
@@ -58,6 +66,25 @@ Then put the file ``grep2awk`` somewhere in your ``$fpath``.  Make sure the file
    bindkey "^X^A" grep2awk
 
 Now, pressing ``<CTRL-X>``-``<CTRL-A>`` will bring you goodies! 
+
+oh-my-zsh
++++++++++
+
+Clone this repository in the ``custom/plugins`` directory of ``oh-my-zsh``.  Then add ``grep2awk`` to the list of plugins:
+
+.. code:: sh
+
+   plugins+=(grep2awk)
+
+If you don't like the default ``^X^A``-keybinding, you can set the variable ``GREP2AWK_KEY`` to your desired key combination.
+
+Antigen
++++++++
+
+Put ``antigen bundle joepvd/grep2awk`` in your startup file, and you should be good.  ``GREP2AWK_KEY`` can be used to override the default key binding.
+
+Configuration
+-------------
 
 This zle function can be configured as follows:
 
