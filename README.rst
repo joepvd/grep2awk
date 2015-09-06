@@ -1,5 +1,5 @@
-grep2awk: A small zsh/zle helper
-================================
+grep2awk: ZSH plugin for command transformation
+===============================================
 
 While trying to find the needle in a haystack, you find yourself recklessly grepping some log files.  Suddenly, it occurs to you that there might be a pattern in the data, and ``awk`` will be the fastest way to figure out if this pattern has any relevance or not.  You want to change your ``grep`` into an ``awk`` oneliner. 
 
@@ -9,6 +9,10 @@ For this slight inconvenience, the tool ``grep2awk`` was written. It finds the f
 
 Some examples
 -------------
+
+.. image:: https://cloud.githubusercontent.com/assets/884975/9703977/f181e55e-5494-11e5-8ee9-563da9e5e532.gif
+   :align: center
+   :alt: Screencast grep2awk. Made with tty2gif.
 
 After pressing a magical key combination, your editing buffer will be searched for ``grep`` commands, and the buffer will have the ``grep`` part replaced by an ``awk`` command. 
 
@@ -37,9 +41,6 @@ Some options to grep will be translated to appropriate awk statements:
 
     % grep -vi 'not here' file <CTRLX><CTRL-A>
     % awk -- 'BEGIN{IGNORECASE=1}; !/not here/ {print $0}' file
-
-
-
 
 Installation
 ------------
