@@ -312,7 +312,7 @@ grep2awk() {
     }
 
     zstyle -s ':grep2awk:' awk awk
-    : ${awk:=awk --}
+    : ${awk:=awk}
 
 
     # Store line as $reply[@]:

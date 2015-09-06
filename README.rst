@@ -105,7 +105,7 @@ This zle function can be configured as follows:
 
    zstyle ':grep2awk:' awk 'gawk --'
 
-This sets the command that will be executed. The default is ``awk --``, and if you desire to use another awk program, you can do so.
+This sets the command that will be executed. The default is ``awk``, and if you desire to use another awk program, you can do so.
 
 .. code:: sh
 
