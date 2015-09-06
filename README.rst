@@ -7,8 +7,8 @@ This involves some mechanical work: Arrow up to get to the command line, move to
 
 For this slight inconvenience, the tool ``grep2awk`` was written. It finds the first occurrence of the word ``grep`` in the current command line, and tries to convert the options and the regular expression into a skeleton for an ``awk``-script.  Just press a key you have chosen yourself, and you're already past the point of potential distraction which the mechanical work can entail. 
 
-Some examples:
---------------
+Some examples
+-------------
 
 After pressing a magical key combination, your editing buffer will be searched for ``grep`` commands, and the buffer will have the ``grep`` part replaced by an ``awk`` command. 
 
@@ -41,8 +41,8 @@ Some options to grep will be translated to appropriate awk statements:
 
 
 
-Installation:
--------------
+Installation
+------------
 
 If you are using some zsh configuration framework or plugin manager, jump ahead.  If you are rolling your own zsh configuration, here is the deal.  Clone the repository someplace:
 
@@ -67,7 +67,7 @@ Make sure ``grep2awk`` gets ``autoload``-ed, making the script known as a line e
 
 Now, pressing ``<CTRL-X>``-``<CTRL-A>`` will bring you goodies! 
 
-oh-my-zsh
+Oh-my-zsh
 +++++++++
 
 Clone this repository in the ``custom/plugins`` directory of ``oh-my-zsh``.  Then add ``grep2awk`` to the list of plugins:
@@ -82,6 +82,19 @@ Antigen
 +++++++
 
 Put ``antigen bundle joepvd/grep2awk`` in your startup file, and you should be good.  ``GREP2AWK_KEY`` can be used to override the default key binding.
+
+
+Prezto
+++++++
+
+Clone the repository in the modules directory of ``zpresto``:
+
+.. code:: sh 
+   
+   cd ${ZDOTDIR:-$HOME}/.zprezto/modules
+   git clone git@github.com:joepvd/grep2awk.git
+
+Then, probably in ``~/.zprestorc``, add ``grep2awk`` to the list ``zstyle ':prezto:load' pmodule``.  The keybinding defaults to ``^X^A``, but can be set by setting the variable ``GREP2AWK_KEY``. 
 
 Configuration
 -------------
@@ -131,8 +144,6 @@ Development
 -----------
 
 Patches and bug reports welcome! Main development takes place at https://github.com/joepvd/grep2awk/. 
-
-If you ``source`` the file ``init.zsh``, the development version of ``grep2awk`` will be made available under key binding ``<CTRL-P>``. Handy for quick testing.
 
 There is a testing library in the ``t``-directory, in which the testing framework from the `ZSH`-project has been adjusted to work with the currently installed shell.  Please run and update the tests when playing with the code. 
 
