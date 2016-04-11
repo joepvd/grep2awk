@@ -76,52 +76,52 @@
 
   zletest $'grep re f\C-P'
 0:Basic function
->BUFFER: awk -- '/re/ {print $0}' f
->CURSOR: 22
+>BUFFER: awk '/re/ {print $0}' f
+>CURSOR: 19
 
 # Test outside of scope of this project.
 #
 #  zletest $'grep "aa  bbb" f\C-P'
 #0:word split re
-#>BUFFER: awk -- '/aa  bbb/ {print $0}' f
-#>CURSOR: 27
+#>BUFFER: awk '/aa  bbb/ {print $0}' f
+#>CURSOR: 24
 
 # Tests of single options:
 
   zletest $'grep -l re f\C-P'
 0:print matching files
->BUFFER: awk -- '/re/ {print FILENAME; nextfile}' f
->CURSOR: 38
+>BUFFER: awk '/re/ {print FILENAME; nextfile}' f
+>CURSOR: 35
 
   zletest $'grep -L re f\C-P'
 0:print not matching files
->BUFFER: awk -- 'BEGINFILE{flag=0};ENDFILE{if (flag==0)print FILENAME}; /re/ {flag=1; nextfile}' f
->CURSOR: 85
+>BUFFER: awk 'BEGINFILE{flag=0};ENDFILE{if (flag==0)print FILENAME}; /re/ {flag=1; nextfile}' f
+>CURSOR: 82
 
   zletest $'grep -H re f\C-P'
 0:print filename
->BUFFER: awk -- '/re/ {print FILENAME":"$0}' f
->CURSOR: 33
+>BUFFER: awk '/re/ {print FILENAME":"$0}' f
+>CURSOR: 30
 
   zletest $'grep -v re f\C-P'
 0:inverse match
->BUFFER: awk -- '!/re/ {print $0}' f
->CURSOR: 23
+>BUFFER: awk '!/re/ {print $0}' f
+>CURSOR: 20
 
   zletest $'grep -w re f\C-P'
 0:Word match
->BUFFER: awk -- '/\<(re)\>/ {print $0}' f
->CURSOR: 28
+>BUFFER: awk '/\<(re)\>/ {print $0}' f
+>CURSOR: 25
 
   zletest $'grep -x re f\C-P'
 0:Line match
->BUFFER: awk -- '/^(re)$/ {print $0}' f
->CURSOR: 26
+>BUFFER: awk '/^(re)$/ {print $0}' f
+>CURSOR: 23
 
   zletest $'grep -c re f\C-P'
 0:Count matches
->BUFFER: awk -- 'BEGINFILE{c=0};ENDFILE{if(c>0)print FILENAME":"c}; /re/ {c++}' f
->CURSOR: 68
+>BUFFER: awk 'BEGINFILE{c=0};ENDFILE{if(c>0)print FILENAME":"c}; /re/ {c++}' f
+>CURSOR: 65
 
   zletest $'grep -P re f\C-P'
 0:No support for pcre
@@ -133,18 +133,18 @@
 # using history... 
   zletest $'grep -F "aaa\nbbb" <<<""\C-J\C-A\C-P'
 0:Multiline -F re
->BUFFER: awk -- '/aaa|bbb/ {print $0}' <<<""
->CURSOR: 27
+>BUFFER: awk '/aaa|bbb/ {print $0}' <<<""
+>CURSOR: 24
 
   zletest $'echo aaa | grep bbb | tail\C-P'
 0:Cursor placement in compounded command
->BUFFER: echo aaa | awk -- '/bbb/ {print $0}' | tail
->CURSOR: 34
+>BUFFER: echo aaa | awk '/bbb/ {print $0}' | tail
+>CURSOR: 31
 
   zletest $'grep -l -- -a -b\C-P'
 0:End of Options marker
->BUFFER: awk -- '/-a/ {print FILENAME; nextfile}' -b
->CURSOR: 38
+>BUFFER: awk '/-a/ {print FILENAME; nextfile}' -b
+>CURSOR: 35
 
 %clean
   zmodload -ui zsh/zpty
