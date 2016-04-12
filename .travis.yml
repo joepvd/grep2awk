@@ -1,0 +1,10 @@
+language: c
+sudo: required
+
+before_install:
+    - sudo apt-get -qq update
+    - sudo apt-get install zsh
+    - zsh --version
+
+script:
+    - cd t && ./ztst.zsh grep2awk.ztst
