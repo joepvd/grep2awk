@@ -4,4 +4,4 @@
 
 autoload -Uz grep2awk
 zle -N grep2awk
-bindkey ${GREP2AWK_KEY:-^X^A} grep2awk
+bindkey ${GREP2AWK_KEY:-\^X\^A} grep2awk
